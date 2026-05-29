@@ -8,6 +8,7 @@ services:
     volumes:
       - ./logs:/logs
       - ./config:/app/config
+      - ./certs:/certs:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/v1/health')"]

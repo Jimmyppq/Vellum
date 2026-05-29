@@ -253,12 +253,18 @@ curl -s -X POST http://localhost:8000/v1/message \
 
 ```json
 {
-  "provider": "openai",
-  "model": "gpt-4o-mini",
-  "content": "Claro, te llamas Ana.",
-  "usage": {
-    "input_tokens": 42,
-    "output_tokens": 8
+  "data": {
+    "provider": "openai",
+    "model": "gpt-4o-mini",
+    "content": "Claro, te llamas Ana.",
+    "usage": {
+      "input_tokens": 42,
+      "output_tokens": 8
+    }
+  },
+  "meta": {
+    "request_id": "d4f8d4c4-2853-4df7-a2c2-b96e4cd09e42",
+    "version": "0.1.0"
   }
 }
 ```
@@ -396,12 +402,18 @@ curl -s -X POST http://localhost:8000/v1/embed \
 
 ```json
 {
-  "provider": "openai",
-  "model": "text-embedding-3-small",
-  "embeddings": [[0.012, -0.034, 0.087, ...]],
-  "usage": {
-    "input_tokens": 8,
-    "output_tokens": 0
+  "data": {
+    "provider": "openai",
+    "model": "text-embedding-3-small",
+    "embeddings": [[0.012, -0.034, 0.087, ...]],
+    "usage": {
+      "input_tokens": 8,
+      "output_tokens": 0
+    }
+  },
+  "meta": {
+    "request_id": "a1b2c3d4-0000-0000-0000-000000000000",
+    "version": "0.1.0"
   }
 }
 ```
@@ -498,7 +510,8 @@ curl -s http://localhost:8000/v1/providers \
 
 | Header | Descripción |
 |--------|-------------|
-| `X-Request-ID` | UUID v4 único por solicitud; usar para correlacionar con los logs |
+| `X-Request-ID` | UUID v4 único por solicitud; usar para correlacionar con los logs del router-ai |
+| `X-Trace-Id` | ID de traza propagado de extremo a extremo; si se envía en el request se reenvía en la respuesta; si no se envía, el router genera uno nuevo |
 | `X-RateLimit-Remaining-RPM` | Solicitudes restantes en la ventana actual (60s) |
 | `X-RateLimit-Remaining-TPM` | Tokens restantes en la ventana actual (60s) |
 

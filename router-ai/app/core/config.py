@@ -27,6 +27,12 @@ class Settings(BaseSettings):
     # Rate limiting
     rate_limits_config: str = "config/rate_limits.yaml"
 
+    # mTLS (false en dev local, true en staging/producción)
+    mtls_enabled: bool = False
+    mtls_cert_path: str = "/certs/service.crt"
+    mtls_key_path: str = "/certs/service.key"
+    mtls_ca_path: str = "/certs/ca.crt"
+
     @field_validator("log_level", mode="before")
     @classmethod
     def validate_log_level(cls, v: str) -> str:

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "router-ai"
-version = "0.1.0"
+version = "0.2.0"
 description = "Microservicio de enrutamiento unificado para múltiples proveedores LLM"
 requires-python = ">=3.12"
 dependencies = [

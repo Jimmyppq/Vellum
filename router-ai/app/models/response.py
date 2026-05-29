@@ -1,5 +1,18 @@
+from typing import Any
 from pydantic import BaseModel
 from app.models.common import UsageInfo
+
+APP_VERSION = "0.2.0"
+
+
+class Meta(BaseModel):
+    request_id: str
+    version: str = APP_VERSION
+
+
+class ApiResponse(BaseModel):
+    data: Any
+    meta: Meta
 
 
 class MessageResponse(BaseModel):
@@ -39,4 +52,5 @@ class HealthResponse(BaseModel):
 class ErrorResponse(BaseModel):
     code: str
     message: str
+    trace_id: str | None = None
     provider: str | None = None

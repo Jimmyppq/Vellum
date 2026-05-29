@@ -4,6 +4,63 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es/1.0.0/) y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.1.1] — 2026-05-29
+
+### ⚠️ Breaking changes
+
+- **Formato de respuesta unificado** (`/v1/message`, `/v1/embed`): los endpoints ahora devuelven
+  un envelope estándar `{"data": {...}, "meta": {"request_id": "...", "version": "..."}}`.
+  Los clientes que lían directamente campos como `response["content"]` deben actualizarse a
+  `response["data"]["content"]`. El endpoint `/v1/stream` no se ve afectado (SSE sin envelope).
+- `ErrorResponse` incorpora el nuevo campo `trace_id` (nullable). Cualquier código que construya
+  este modelo por posición debe revisarse.
+
+### ✨ Nuevas funcionalidades
+
+- **Circuit breaker por proveedor** (`app/core/circuit_breaker.py`): máquina de estados
+  CLOSED → OPEN → HALF_OPEN. Tras 5 fallos consecutivos el circuito se abre y el proveedor
+  deja de recibir llamadas durante 60 s. Se cierra de nuevo tras 2 éxitos en estado HALF_OPEN.
+  Los umbrales son configurables por instancia de `CircuitBreaker`.
+- **Soporte mTLS** (`MTLS_ENABLED`, `MTLS_CERT_PATH`, `MTLS_KEY_PATH`, `MTLS_CA_PATH`): el nuevo
+  `entrypoint.sh` arranca uvicorn con parámetros SSL cuando `MTLS_ENABLED=true`, sin necesidad
+  de reconstruir la imagen. El volumen `./certs:/certs:ro` se añade al `docker-compose.yml`.
+- **Propagación de `X-Trace-Id`**: el `AuditLogMiddleware` lee el header `X-Trace-Id` del request
+  entrante (o genera uno si está ausente), lo almacena en `request.state.trace_id` y lo reenvía
+  en el header `X-Trace-Id` de la respuesta. El campo `trace_id` también se incluye en el log
+  de auditoría de cada solicitud.
+- **Proveedor Google Gemini** (`app/adapters/google.py`): soporte completo para
+  `message`, `stream` y `embed` vía `google-genai` SDK. Activado con `GOOGLE_API_KEY`.
+
+### 🐛 Correcciones
+
+- **`InMemoryRateLimitStore.get_count`** contaba entradas expiradas al no llamar a `_evict`
+  previamente, produciendo falsos `RATE_LIMIT_EXCEEDED`. Corregido; la firma del método abstracto
+  añade `window_seconds: int = 60` para permitir la evicción correcta.
+- **Container ejecutaba como root**: añadido `USER appuser` al Dockerfile (con `useradd` y
+  `chown` previos), cumpliendo la regla de contenerización del proyecto.
+
+### 🔒 Seguridad
+
+- Los errores ahora incluyen `trace_id` para correlación directa con los logs del sistema sin
+  exponer información sensible adicional.
+- La imagen Docker ya no corre como root (ver correcciones).
+
+### 📐 Validaciones
+
+- `Message.role` tipado con `Literal["user", "assistant", "system"]`; antes aceptaba cualquier
+  string.
+- `MessageRequest.provider` normalizado a minúsculas y validado no-vacío.
+- `MessageRequest.messages` validado con al menos un elemento.
+- `EmbedRequest.provider` e `EmbedRequest.input` con validaciones equivalentes.
+
+### 📖 Documentación
+
+- `developer-guide.md`: nueva sección de circuit breaker, tabla de variables mTLS, y descripción
+  actualizada del `AuditLogMiddleware` con propagación de `X-Trace-Id`.
+- `user-guide.md`: ejemplos de respuesta actualizados con el nuevo envelope `{data, meta}`,
+  y `X-Trace-Id` añadido a la tabla de headers de respuesta.
+
+
 ---
 
 ## [1.1.0] — 2026-05-29

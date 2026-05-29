@@ -2,22 +2,21 @@ import time
 from abc import ABC, abstractmethod
 from collections import defaultdict, deque
 
+WINDOW = 60
+
 
 class RateLimitStore(ABC):
 
     @abstractmethod
     def increment(self, key: str, window_seconds: int) -> int:
-        """Añade la marca de tiempo actual y retorna el conteo en la ventana."""
         ...
 
     @abstractmethod
-    def get_count(self, key: str) -> int:
-        """Retorna el conteo actual sin modificar el store."""
+    def get_count(self, key: str, window_seconds: int = WINDOW) -> int:
         ...
 
     @abstractmethod
     def oldest_timestamp(self, key: str) -> float | None:
-        """Retorna el timestamp más antiguo en la ventana, o None si está vacío."""
         ...
 
 
@@ -37,7 +36,8 @@ class InMemoryRateLimitStore(RateLimitStore):
         self._windows[key].append(time.monotonic())
         return len(self._windows[key])
 
-    def get_count(self, key: str) -> int:
+    def get_count(self, key: str, window_seconds: int = WINDOW) -> int:
+        self._evict(key, window_seconds)
         return len(self._windows.get(key, deque()))
 
     def oldest_timestamp(self, key: str) -> float | None:

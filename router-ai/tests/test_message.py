@@ -7,7 +7,11 @@ def test_message_exitoso(client):
         "messages": [{"role": "user", "content": "Hola"}],
     })
     assert response.status_code == 200
-    data = response.json()
+    body = response.json()
+    assert "data" in body
+    assert "meta" in body
+    assert "request_id" in body["meta"]
+    data = body["data"]
     assert data["provider"] == "mock"
     assert data["content"] == "respuesta de prueba"
     assert "usage" in data

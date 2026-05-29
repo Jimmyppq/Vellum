@@ -12,7 +12,9 @@ class AuditLogMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next) -> Response:
         request_id = str(uuid.uuid4())
+        trace_id = request.headers.get("X-Trace-Id") or str(uuid.uuid4())
         request.state.request_id = request_id
+        request.state.trace_id = trace_id
         start = time.monotonic()
 
         response = await call_next(request)
@@ -28,6 +30,7 @@ class AuditLogMiddleware(BaseHTTPMiddleware):
             request.url.path,
             extra={
                 "request_id": request_id,
+                "trace_id": trace_id,
                 "method": request.method,
                 "path": request.url.path,
                 "status_code": status_code,
@@ -36,4 +39,5 @@ class AuditLogMiddleware(BaseHTTPMiddleware):
         )
 
         response.headers["X-Request-ID"] = request_id
+        response.headers["X-Trace-Id"] = trace_id
         return response

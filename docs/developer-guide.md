@@ -85,6 +85,20 @@ class BaseAdapter(ABC):
 
 Añadir un nuevo proveedor sólo requiere crear una clase nueva que herede de `BaseAdapter` y registrarla en `registry.startup()`. No es necesario tocar ningún endpoint ni middleware.
 
+### Circuit Breaker
+
+`ProviderRegistry` incluye un `CircuitBreaker` por proveedor (en `app/core/circuit_breaker.py`). Cuando un adaptador lanza una excepción, el endpoint llama a `registry.record_failure(provider)`. Tras 5 fallos consecutivos (configurable), el circuito se abre y `registry.get(provider)` devuelve `None` — lo que produce `PROVIDER_NOT_FOUND` hasta que el circuito se recupere.
+
+Estados del circuito:
+
+| Estado | Comportamiento |
+|--------|----------------|
+| `CLOSED` | Operación normal |
+| `OPEN` | Rechaza todas las llamadas; tras 60 s pasa a `HALF_OPEN` |
+| `HALF_OPEN` | Permite una llamada de prueba; si hay 2 éxitos consecutivos vuelve a `CLOSED` |
+
+Umbrales por defecto: `failure_threshold=5`, `recovery_timeout=60s`, `success_threshold=2`.
+
 ### ProviderRegistry
 
 Singleton inicializado durante el `lifespan` de FastAPI. Lee las variables de entorno al arranque e instancia sólo los adaptadores con credenciales presentes:
@@ -145,11 +159,13 @@ APIKeyMiddleware      ← valida X-API-Key (excepto /v1/health)
 RateLimitMiddleware  ← verifica RPM/TPM por proveedor
     │
     ▼
-AuditLogMiddleware   ← genera request_id, mide duration_ms, loguea
+AuditLogMiddleware   ← lee/genera X-Trace-Id, genera request_id, mide duration_ms, loguea
     │
     ▼
 Handler del endpoint
 ```
+
+`AuditLogMiddleware` propaga el header `X-Trace-Id` de extremo a extremo: si el request entrante lo incluye, se reutiliza; si no, se genera uno nuevo. El valor queda disponible en `request.state.trace_id` para los handlers y se devuelve en el header `X-Trace-Id` de la respuesta.
 
 ### Autenticación
 
@@ -201,6 +217,12 @@ cp .env.example .env
 | `LOG_LEVEL` | Nivel de log: `DEBUG` / `INFO` / `WARNING` | No | `INFO` |
 | `LOG_DIR` | Directorio para logs persistentes | No | `/logs` |
 | `RATE_LIMITS_CONFIG` | Ruta al YAML de rate limits | No | `config/rate_limits.yaml` |
+| `MTLS_ENABLED` | Activa TLS mutuo en uvicorn | No | `false` |
+| `MTLS_CERT_PATH` | Ruta al certificado del servicio | No | `/certs/service.crt` |
+| `MTLS_KEY_PATH` | Ruta a la clave privada del servicio | No | `/certs/service.key` |
+| `MTLS_CA_PATH` | Ruta al certificado de la CA interna | No | `/certs/ca.crt` |
+
+Cuando `MTLS_ENABLED=true`, el `entrypoint.sh` arranca uvicorn con `--ssl-keyfile`, `--ssl-certfile` y `--ssl-ca-certs`. En dev local puede dejarse en `false`; en staging/producción debe ser `true`. El volumen `./certs:/certs:ro` en `docker-compose.yml` monta los certificados dentro del contenedor.
 
 **Generación de `ROUTER_AI_API_KEY`:**
 
