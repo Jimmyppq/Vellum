@@ -1,0 +1,35 @@
+# Configuración de rate limiting por proveedor LLM
+# Montar como volumen externo: ./config:/app/config
+#
+# Campos por proveedor:
+#   requests_per_minute: máximo de solicitudes en una ventana de 60s (null = sin límite)
+#   tokens_per_minute:   máximo de tokens en una ventana de 60s (null = sin límite)
+#
+# ── Path de migración a base de datos ────────────────────────────────────────
+# La clase RateLimiter usa un RateLimitStore (ABC) internamente.
+# Para migrar a Redis sin tocar el middleware:
+#   1. Implementar RedisRateLimitStore(RateLimitStore) con redis-py async
+#   2. Inyectarlo en RateLimiter(config_path, store=RedisRateLimitStore(...))
+#   3. Actualizar el startup de app/main.py
+# ─────────────────────────────────────────────────────────────────────────────
+
+providers:
+  anthropic:
+    requests_per_minute: 60
+    tokens_per_minute: 100000
+
+  openai:
+    requests_per_minute: 100
+    tokens_per_minute: 150000
+
+  deepseek:
+    requests_per_minute: 50
+    tokens_per_minute: 80000
+
+  ollama:
+    requests_per_minute: 200
+    tokens_per_minute: null  # local, sin límite de tokens
+
+  lmstudio:
+    requests_per_minute: 200
+    tokens_per_minute: null  # local, sin límite de tokens

@@ -1,0 +1,3366 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>Vellum · AI Governance Platform</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Academic Architect — tokens */
+:root {
+  /* Surfaces — warm neutrals, no pure white */
+  --surface:                   #f9f9f9;
+  --surface_dim:               #d9d9d9;
+  --surface_bright:            #f9f9f9;
+  --surface_container_lowest:  #ffffff;
+  --surface_container_low:     #f4f3f3;
+  --surface_container:         #eeeeee;
+  --surface_container_high:    #e8e8e8;
+  --surface_container_highest: #e2e2e2;
+
+  /* Text */
+  --on_surface:         #1a1c1c;
+  --on_surface_variant: #3f4849;
+  --outline:            #6f797a;
+  --outline_variant:    #c1c8ca;
+
+  /* Primary — Institutional Blue (teal) */
+  --primary:            #001a20;
+  --primary_container:  #023039;
+  --on_primary:         #ffffff;
+  --on_primary_container: #f0f9fc;
+
+  /* Secondary — Corporate Maroon */
+  --secondary:            #7b5456;
+  --secondary_container:  #ffdada;
+  --on_secondary:         #ffffff;
+  --on_secondary_container: #31101a;
+
+  /* Tertiary — Coral (success/energy) */
+  --tertiary:            #d96c3f;
+  --tertiary_container:  #ffdbcc;
+  --on_tertiary:         #ffffff;
+  --on_tertiary_container: #3b0f00;
+
+  /* Semantic */
+  --success: #3f7d58;
+  --success_container: #d8eadc;
+  --warning: #b06c00;
+  --warning_container: #fde5b8;
+  --error:   #9a2a2a;
+  --error_container: #f8dada;
+
+  /* Radii */
+  --r-sm: 0.25rem;
+  --r-md: 0.375rem;
+  --r-lg: 0.5rem;
+  --r-xl: 0.75rem;
+  --r-2xl: 1rem;
+
+  /* Spacing (8pt) */
+  --s-1: 0.25rem;  --s-2: 0.5rem;  --s-3: 0.75rem;
+  --s-4: 1rem;    --s-5: 1.25rem; --s-6: 1.5rem;
+  --s-8: 2rem;    --s-10: 2.5rem; --s-12: 3rem;
+  --s-16: 4rem;   --s-20: 5rem;   --s-24: 6rem;
+
+  /* Shadows — ambient, teal-tinted */
+  --shadow-sm: 0 2px 6px rgba(2, 48, 57, 0.04);
+  --shadow-md: 0 8px 24px rgba(2, 48, 57, 0.06);
+  --shadow-lg: 0 20px 40px rgba(2, 48, 57, 0.08);
+}
+
+/* Dark mode (not main target but available) */
+.theme-dark {
+  --surface:                   #0e1314;
+  --surface_dim:               #0a0e0f;
+  --surface_bright:            #1a2122;
+  --surface_container_lowest:  #080c0d;
+  --surface_container_low:     #141a1b;
+  --surface_container:         #191f20;
+  --surface_container_high:    #232a2b;
+  --surface_container_highest: #2e3536;
+  --on_surface:         #e3e3e3;
+  --on_surface_variant: #bfc8c9;
+  --outline:            #8a9393;
+  --outline_variant:    #3a4243;
+  --primary:            #7ed4e6;
+  --primary_container:  #003744;
+  --on_primary:         #00363f;
+  --on_primary_container: #d2f4fc;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--on_surface);
+  background: var(--surface);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ---- typography ---- */
+.font-display { font-family: 'Manrope', sans-serif; letter-spacing: -0.02em; }
+.font-mono    { font-family: 'JetBrains Mono', monospace; }
+
+.display-lg { font-family: 'Manrope'; font-size: 3.5rem;  font-weight: 700; letter-spacing: -0.03em; line-height: 1.02; }
+.display-md { font-family: 'Manrope'; font-size: 2.75rem; font-weight: 700; letter-spacing: -0.025em; line-height: 1.05; }
+.headline-lg{ font-family: 'Manrope'; font-size: 2rem;    font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; }
+.headline-md{ font-family: 'Manrope'; font-size: 1.5rem;  font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
+.headline-sm{ font-family: 'Manrope'; font-size: 1.125rem;font-weight: 600; letter-spacing: -0.015em; }
+.title-lg   { font-family: 'Inter';   font-size: 1rem;    font-weight: 600; letter-spacing: -0.01em; }
+.title-md   { font-family: 'Inter';   font-size: 0.875rem;font-weight: 600; }
+.body-lg    { font-family: 'Inter';   font-size: 1rem;    font-weight: 400; line-height: 1.6; }
+.body-md    { font-family: 'Inter';   font-size: 0.875rem;font-weight: 400; line-height: 1.55; }
+.body-sm    { font-family: 'Inter';   font-size: 0.8125rem;font-weight: 400; line-height: 1.5; }
+.label-lg   { font-family: 'Inter';   font-size: 0.875rem;font-weight: 500; }
+.label-md   { font-family: 'Inter';   font-size: 0.8125rem;font-weight: 500; }
+.label-sm   { font-family: 'Inter';   font-size: 0.6875rem;font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+
+.muted { color: var(--on_surface_variant); }
+.faint { color: var(--outline); }
+
+/* ---- shell ---- */
+.app-shell {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  min-height: 100vh;
+  background: var(--surface);
+}
+
+.sidebar {
+  background: var(--surface_container_low);
+  padding: var(--s-6) var(--s-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-8);
+  transition: width 200ms cubic-bezier(.2,.7,.2,1);
+  width: 248px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+.sidebar.collapsed { width: 68px; padding: var(--s-6) var(--s-2); }
+
+.sidebar-brand {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: 0 var(--s-2);
+  margin-bottom: var(--s-2);
+  font-family: 'Manrope'; font-weight: 700; font-size: 1.125rem;
+  letter-spacing: -0.02em;
+  color: var(--on_surface);
+}
+.brand-mark {
+  width: 28px; height: 28px;
+  border-radius: var(--r-md);
+  background: var(--primary_container);
+  color: var(--on_primary);
+  display: grid; place-items: center;
+  font-family: 'Manrope'; font-weight: 700;
+  flex: none;
+}
+
+.nav-section { display: flex; flex-direction: column; gap: 2px; }
+.nav-section-label {
+  padding: 0 var(--s-3);
+  margin-bottom: var(--s-2);
+  color: var(--outline);
+}
+.nav-item {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-md);
+  color: var(--on_surface_variant);
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background 120ms, color 120ms;
+  border: none; background: none; text-align: left; width: 100%;
+  font-family: inherit;
+}
+.nav-item:hover { background: var(--surface_container); color: var(--on_surface); }
+.nav-item.active { background: var(--primary_container); color: var(--on_primary); }
+.nav-item .ico { flex: none; width: 18px; height: 18px; display: grid; place-items: center; }
+.sidebar.collapsed .nav-item-label { display: none; }
+.sidebar.collapsed .nav-item { justify-content: center; padding: var(--s-3); }
+.sidebar.collapsed .nav-section-label { display: none; }
+.sidebar.collapsed .sidebar-brand span:last-child { display: none; }
+.nav-item .count {
+  margin-left: auto;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--outline);
+  background: var(--surface_container_high);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.nav-item.active .count { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.9); }
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: var(--s-3);
+  display: flex; align-items: center; gap: var(--s-3);
+  border-radius: var(--r-lg);
+  background: var(--surface_container);
+  cursor: pointer;
+}
+.sidebar.collapsed .sidebar-footer { padding: var(--s-2); justify-content: center; }
+.avatar {
+  width: 32px; height: 32px; flex: none;
+  border-radius: 50%;
+  background: var(--secondary);
+  color: var(--on_secondary);
+  display: grid; place-items: center;
+  font-weight: 600; font-size: 0.75rem;
+}
+.avatar.lg { width: 40px; height: 40px; font-size: 0.875rem; }
+.avatar-meta { display: flex; flex-direction: column; min-width: 0; }
+.avatar-meta .name { font-size: 0.8125rem; font-weight: 600; color: var(--on_surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.avatar-meta .role { font-size: 0.6875rem; color: var(--on_surface_variant); }
+.sidebar.collapsed .avatar-meta { display: none; }
+
+/* ---- main area ---- */
+.main { display: flex; flex-direction: column; min-width: 0; }
+
+.topbar {
+  display: flex; align-items: center; gap: var(--s-4);
+  padding: var(--s-3) var(--s-8);
+  background: var(--surface_container_low);
+  position: sticky; top: 0; z-index: 10;
+}
+.topbar .omnibar {
+  flex: 1; max-width: 560px;
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-2) var(--s-4);
+  background: var(--surface_container_high);
+  border-radius: var(--r-lg);
+  color: var(--on_surface_variant);
+  cursor: text;
+  transition: background 120ms;
+}
+.topbar .omnibar:hover { background: var(--surface_container_highest); }
+.topbar .omnibar kbd {
+  margin-left: auto;
+  font-family: 'JetBrains Mono';
+  font-size: 0.6875rem;
+  padding: 2px 6px;
+  background: var(--surface_container_lowest);
+  border-radius: var(--r-sm);
+  color: var(--outline);
+}
+.topbar-actions { display: flex; align-items: center; gap: var(--s-2); margin-left: auto; }
+.icon-btn {
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  border-radius: var(--r-md);
+  background: transparent; border: none;
+  color: var(--on_surface_variant);
+  cursor: pointer;
+  position: relative;
+  transition: background 120ms;
+}
+.icon-btn:hover { background: var(--surface_container_high); color: var(--on_surface); }
+.icon-btn .dot {
+  position: absolute; top: 8px; right: 8px;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--tertiary);
+}
+
+.page {
+  padding: var(--s-10) var(--s-10);
+  max-width: 1600px;
+}
+.page-wide { max-width: none; padding: var(--s-8) var(--s-10); }
+
+/* ---- page header ---- */
+.page-header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: var(--s-8);
+  margin-bottom: var(--s-10);
+}
+.page-header .eyebrow {
+  color: var(--outline);
+  margin-bottom: var(--s-3);
+}
+.page-header h1 {
+  margin: 0;
+  max-width: 720px;
+}
+.page-header .sub {
+  margin-top: var(--s-3);
+  color: var(--on_surface_variant);
+  max-width: 560px;
+}
+
+/* ---- buttons ---- */
+.btn {
+  display: inline-flex; align-items: center; gap: var(--s-2);
+  padding: var(--s-2) var(--s-4);
+  border-radius: var(--r-md);
+  font-family: 'Inter'; font-size: 0.875rem; font-weight: 500;
+  border: none; cursor: pointer;
+  white-space: nowrap;
+  transition: background 120ms, transform 60ms;
+}
+.btn:active { transform: scale(0.98); }
+.btn-primary { background: var(--primary_container); color: var(--on_primary); }
+.btn-primary:hover { background: var(--primary); }
+.btn-secondary { background: var(--secondary); color: var(--on_secondary); }
+.btn-secondary:hover { filter: brightness(1.1); }
+.btn-ghost { background: transparent; color: var(--primary_container); font-weight: 600; }
+.btn-ghost:hover { background: var(--surface_container); }
+.btn-surface { background: var(--surface_container_high); color: var(--on_surface); }
+.btn-surface:hover { background: var(--surface_container_highest); }
+.btn-lg { padding: var(--s-3) var(--s-5); font-size: 0.9375rem; }
+.btn-sm { padding: 4px 10px; font-size: 0.75rem; }
+.btn-icon-only { padding: var(--s-2); }
+
+/* ---- badges ---- */
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.badge .bullet { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.badge-success { background: var(--success_container); color: var(--success); }
+.badge-warning { background: var(--warning_container); color: var(--warning); }
+.badge-error   { background: var(--error_container); color: var(--error); }
+.badge-neutral { background: var(--surface_container_high); color: var(--on_surface_variant); }
+.badge-primary { background: color-mix(in srgb, var(--primary_container) 12%, transparent); color: var(--primary_container); }
+.badge-tertiary{ background: var(--tertiary_container); color: var(--on_tertiary_container); }
+
+/* ---- cards ---- */
+.card {
+  background: var(--surface_container_low);
+  border-radius: var(--r-xl);
+  padding: var(--s-6);
+}
+.card-raised {
+  background: var(--surface_container_lowest);
+  border-radius: var(--r-xl);
+  padding: var(--s-6);
+  box-shadow: var(--shadow-sm);
+}
+.card-flat { background: var(--surface_container); border-radius: var(--r-xl); padding: var(--s-6); }
+
+/* ---- kpi ---- */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--s-4);
+}
+.kpi {
+  background: var(--surface_container_lowest);
+  border-radius: var(--r-xl);
+  padding: var(--s-6);
+  display: flex; flex-direction: column; gap: var(--s-5);
+  min-height: 160px;
+}
+.kpi .kpi-label {
+  color: var(--on_surface_variant);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+.kpi .kpi-value {
+  font-family: 'Manrope';
+  font-size: 2.75rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--on_surface);
+}
+.kpi .kpi-unit { color: var(--outline); font-size: 1.25rem; font-weight: 500; margin-left: 4px; }
+.kpi .kpi-delta { font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+.kpi .kpi-delta.up   { color: var(--success); }
+.kpi .kpi-delta.down { color: var(--error); }
+.kpi-foot { display: flex; align-items: center; justify-content: space-between; color: var(--on_surface_variant); font-size: 0.75rem; }
+
+/* ---- tables ---- */
+.table-wrap {
+  background: var(--surface_container_lowest);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+}
+table.v-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.875rem;
+}
+.v-table th, .v-table td {
+  padding: var(--s-3) var(--s-5);
+  text-align: left;
+  vertical-align: middle;
+}
+.v-table thead th {
+  background: var(--surface_container_low);
+  color: var(--outline);
+  font-weight: 600;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: var(--s-3) var(--s-5);
+}
+.v-table tbody tr { cursor: pointer; transition: background 80ms; }
+.v-table tbody tr:hover { background: var(--surface_container_low); }
+.v-table tbody td { color: var(--on_surface); }
+
+/* ---- inputs ---- */
+.field { display: flex; flex-direction: column; gap: var(--s-2); }
+.field-label { font-size: 0.75rem; font-weight: 600; color: var(--on_surface_variant); letter-spacing: 0.02em; text-transform: uppercase; }
+.input, .textarea, .select {
+  width: 100%;
+  background: var(--surface_container_high);
+  border: none;
+  border-bottom: 1px solid transparent;
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-md) var(--r-md) 0 0;
+  font-family: inherit;
+  font-size: 0.875rem;
+  color: var(--on_surface);
+  outline: none;
+  transition: border-color 120ms, background 120ms;
+}
+.input:hover, .textarea:hover, .select:hover { background: var(--surface_container_highest); }
+.input:focus, .textarea:focus, .select:focus { border-bottom-color: var(--primary_container); background: var(--surface_container_highest); }
+.input::placeholder, .textarea::placeholder { color: var(--outline); }
+.textarea { min-height: 120px; resize: vertical; line-height: 1.6; }
+
+/* ---- tabs ---- */
+.tabs { display: flex; gap: var(--s-2); align-items: center; }
+.tab {
+  padding: var(--s-2) var(--s-4);
+  border-radius: var(--r-md);
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--on_surface_variant);
+  cursor: pointer;
+}
+.tab:hover { color: var(--on_surface); background: var(--surface_container); }
+.tab.active { color: var(--on_surface); background: var(--surface_container_high); }
+
+/* ---- drawer ---- */
+.drawer-overlay {
+  position: fixed; inset: 0;
+  background: rgba(2, 26, 32, 0.32);
+  backdrop-filter: blur(6px);
+  z-index: 50;
+  animation: fade-in 160ms ease;
+}
+.drawer {
+  position: fixed; right: 0; top: 0; bottom: 0;
+  width: 640px;
+  max-width: 92vw;
+  background: var(--surface_container_lowest);
+  box-shadow: -12px 0 40px rgba(2, 48, 57, 0.08);
+  z-index: 51;
+  display: flex; flex-direction: column;
+  animation: slide-in 220ms cubic-bezier(.2,.7,.2,1);
+}
+.drawer.wide { width: 860px; }
+.drawer-header {
+  padding: var(--s-6) var(--s-8);
+  background: var(--surface_container_low);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.drawer-body { flex: 1; overflow: auto; padding: var(--s-8); }
+.drawer-foot { padding: var(--s-4) var(--s-8); background: var(--surface_container_low); display: flex; gap: var(--s-3); justify-content: flex-end; }
+
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+/* ---- modal ---- */
+.modal {
+  position: fixed; inset: 0;
+  z-index: 60;
+  display: grid; place-items: center;
+  padding: var(--s-6);
+  background: rgba(2, 26, 32, 0.32);
+  backdrop-filter: blur(6px);
+  animation: fade-in 160ms ease;
+}
+.modal-card {
+  width: 720px; max-width: 100%;
+  background: var(--surface_container_lowest);
+  border-radius: var(--r-2xl);
+  box-shadow: 0px 20px 40px rgba(2, 48, 57, 0.12);
+  overflow: hidden;
+}
+
+/* ---- toast ---- */
+.toast-host {
+  position: fixed; right: var(--s-6); bottom: var(--s-6);
+  z-index: 100;
+  display: flex; flex-direction: column; gap: var(--s-3);
+  max-width: 360px;
+}
+.toast {
+  background: rgba(255,255,255,0.84);
+  backdrop-filter: blur(20px);
+  border-radius: var(--r-lg);
+  padding: var(--s-3) var(--s-4);
+  box-shadow: 0 8px 24px rgba(2, 48, 57, 0.12);
+  display: flex; align-items: flex-start; gap: var(--s-3);
+  animation: slide-up 180ms cubic-bezier(.2,.7,.2,1);
+  min-width: 280px;
+}
+.toast .tico { flex: none; margin-top: 2px; }
+.toast .ttitle { font-size: 0.875rem; font-weight: 600; color: var(--on_surface); }
+.toast .tsub { font-size: 0.75rem; color: var(--on_surface_variant); margin-top: 2px; }
+@keyframes slide-up { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* ---- misc ---- */
+.divider-space { height: var(--s-8); }
+.hstack { display: flex; align-items: center; gap: var(--s-3); }
+.vstack { display: flex; flex-direction: column; gap: var(--s-3); }
+.grow { flex: 1; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px;
+  background: var(--surface_container_high);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--on_surface_variant);
+}
+.chip .x { cursor: pointer; color: var(--outline); }
+
+.progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface_container_high);
+  overflow: hidden;
+  position: relative;
+}
+.progress .bar {
+  height: 100%;
+  background: var(--tertiary);
+  border-radius: 999px;
+  transition: width 300ms ease;
+}
+.progress.thick { height: 10px; }
+
+.spinner {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--outline_variant);
+  border-top-color: var(--primary_container);
+  animation: spin 800ms linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.skeleton {
+  background: linear-gradient(90deg, var(--surface_container) 0%, var(--surface_container_high) 50%, var(--surface_container) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+  border-radius: var(--r-sm);
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* ---- code / mono blocks ---- */
+.mono-block {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8125rem;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* prompt variable highlight */
+.prompt-var {
+  background: var(--tertiary_container);
+  color: var(--on_tertiary_container);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono';
+  font-size: 0.8125em;
+  font-weight: 600;
+}
+
+/* markdown-ish content in output */
+.md-out h1, .md-out h2, .md-out h3 { font-family: 'Manrope'; letter-spacing: -0.02em; }
+.md-out h2 { font-size: 1.125rem; margin-top: 1.25em; margin-bottom: 0.4em; }
+.md-out ul { padding-left: 1.25em; }
+.md-out li { margin: 0.25em 0; }
+.md-out strong { color: var(--on_surface); }
+.md-out code { font-family: 'JetBrains Mono'; font-size: 0.85em; background: var(--surface_container_high); padding: 1px 5px; border-radius: 4px; }
+
+/* login */
+.login-root {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  background: var(--surface);
+}
+.login-hero {
+  background: linear-gradient(155deg, var(--primary_container) 0%, var(--primary) 100%);
+  color: var(--on_primary);
+  padding: var(--s-16);
+  display: flex; flex-direction: column; justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+.login-hero::after {
+  content: "";
+  position: absolute; right: -200px; bottom: -200px;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(217,108,63,0.20) 0%, transparent 70%);
+  pointer-events: none;
+}
+.login-form-col {
+  display: grid; place-items: center;
+  padding: var(--s-12);
+}
+.login-form {
+  width: 100%;
+  max-width: 380px;
+}
+
+/* gradient hero */
+.gradient-hero {
+  background: linear-gradient(135deg, var(--primary_container) 0%, var(--primary) 100%);
+  color: var(--on_primary);
+  border-radius: var(--r-2xl);
+  padding: var(--s-10);
+  position: relative;
+  overflow: hidden;
+}
+.gradient-hero::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 85% 20%, rgba(217,108,63,0.14), transparent 60%);
+  pointer-events: none;
+}
+
+/* caret blink */
+.caret::after {
+  content: "▍";
+  color: var(--primary_container);
+  animation: blink 1s step-end infinite;
+  margin-left: 2px;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* diff colors */
+.diff-add   { background: rgba(63,125,88,0.14);  color: var(--success); text-decoration: none; }
+.diff-rem   { background: rgba(154,42,42,0.12);  color: var(--error); text-decoration: line-through; opacity: 0.75; }
+
+/* scrollbars — slim */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--surface_container_highest); border-radius: 10px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: var(--outline_variant); border: 2px solid transparent; background-clip: padding-box; }
+
+</style>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+
+// ====== data.jsx ======
+// Mock data — Latinia / banking domain
+const DATA = {
+  user: {
+    name: 'Helena Ruiz',
+    email: 'helena.ruiz@latinia.com',
+    initials: 'HR',
+    role: 'Administrador',
+  },
+  kpis: [
+    { label: 'Prompts aprobados',          value: '147', unit: '', delta: '+12', dir: 'up',  foot: 'vs. mes anterior' },
+    { label: 'Horas de audio transcritas', value: '312', unit: 'h', delta: '+48h', dir: 'up', foot: 'últimos 30 días' },
+    { label: 'Ejecuciones este mes',       value: '8,942',unit: '', delta: '+23%', dir: 'up', foot: '8,942 / 12,000 plan' },
+    { label: 'Ahorro de tiempo estimado',  value: '1,480',unit: 'h', delta: '−4%', dir: 'down',foot: '≈ €92,500 equiv.' },
+  ],
+  weeklyUsage: [
+    { w: 'S 08', exec: 980,  approvals: 4 },
+    { w: 'S 09', exec: 1240, approvals: 6 },
+    { w: 'S 10', exec: 1120, approvals: 3 },
+    { w: 'S 11', exec: 1610, approvals: 8 },
+    { w: 'S 12', exec: 1980, approvals: 5 },
+    { w: 'S 13', exec: 2140, approvals: 9 },
+    { w: 'S 14', exec: 2380, approvals: 12 },
+    { w: 'S 15', exec: 2640, approvals: 7 },
+  ],
+  modelsBreakdown: [
+    { name: 'GPT-4o',          pct: 46, color: '#023039' },
+    { name: 'Claude 3.5 Sonnet', pct: 28, color: '#7b5456' },
+    { name: 'Azure GPT-4 Turbo', pct: 14, color: '#d96c3f' },
+    { name: 'Whisper (ASR)',    pct:  9, color: '#3f7d58' },
+    { name: 'Otros',            pct:  3, color: '#c1c8ca' },
+  ],
+  recentTranscripts: [
+    { id: 'tr-8471', title: 'Comité de Riesgos · Q1 wrap-up',          dur: '47:12', date: 'hoy, 09:15', status: 'ok' },
+    { id: 'tr-8470', title: 'Call BBVA — implementación MT-940',       dur: '1:02:40', date: 'ayer, 17:30', status: 'ok' },
+    { id: 'tr-8469', title: 'Onboarding cliente · Grupo Santander',    dur: '38:55', date: 'ayer, 11:00', status: 'transcribing' },
+    { id: 'tr-8468', title: 'Retro sprint 42 · Notification platform', dur: '52:07', date: '17 abr',      status: 'ok' },
+    { id: 'tr-8467', title: 'Due diligence · ABN AMRO',                dur: '1:14:22',date: '16 abr',      status: 'error' },
+  ],
+  pendingApprovals: [
+    { id: 'pr-0214', title: 'Resumen ejecutivo de llamada a cliente',        author: 'Marc Oller', ver: 'v4', age: '2h' },
+    { id: 'pr-0213', title: 'Clasificador de incidencias por severidad',     author: 'Irene Páez', ver: 'v2', age: '5h' },
+    { id: 'pr-0212', title: 'Extractor de acuerdos regulatorios MiFID II',   author: 'Diego Soto', ver: 'v7', age: '1d' },
+    { id: 'pr-0211', title: 'Traductor de plantillas SMS a 11 idiomas',      author: 'Nora Vila',  ver: 'v3', age: '2d' },
+  ],
+  prompts: [
+    { id: 'pr-0214', title: 'Resumen ejecutivo de llamada a cliente',         ver: 'v4', status: 'pending',   owner: 'Marc Oller',  updated: 'hace 2h',  tags: ['llamadas', 'resumen', 'C-level'], runs: 2180 },
+    { id: 'pr-0213', title: 'Clasificador de incidencias por severidad',       ver: 'v2', status: 'pending',   owner: 'Irene Páez',  updated: 'hace 5h',  tags: ['ops', 'triage'], runs: 640 },
+    { id: 'pr-0212', title: 'Extractor de acuerdos regulatorios MiFID II',     ver: 'v7', status: 'pending',   owner: 'Diego Soto',  updated: 'ayer',     tags: ['compliance', 'mifid'], runs: 4210 },
+    { id: 'pr-0211', title: 'Traductor de plantillas SMS a 11 idiomas',        ver: 'v3', status: 'pending',   owner: 'Nora Vila',   updated: '2d',       tags: ['notificaciones', 'i18n'], runs: 312 },
+    { id: 'pr-0210', title: 'Análisis de sentiment en calls de retención',     ver: 'v5', status: 'approved',  owner: 'Marc Oller',  updated: '3d',       tags: ['retención', 'sentiment'], runs: 8902 },
+    { id: 'pr-0209', title: 'Detección de datos sensibles (PII banking)',      ver: 'v12',status: 'approved',  owner: 'Sara Klein',  updated: '5d',       tags: ['seguridad', 'PII', 'banking'], runs: 12480 },
+    { id: 'pr-0208', title: 'Generador de disclaimers regulatorios BCE',       ver: 'v2', status: 'approved',  owner: 'Diego Soto',  updated: '1sem',     tags: ['compliance', 'BCE'], runs: 980 },
+    { id: 'pr-0207', title: 'Resumen de minutas de Comité de Riesgos',         ver: 'v8', status: 'approved',  owner: 'Helena Ruiz', updated: '1sem',     tags: ['riesgos', 'minutas'], runs: 1420 },
+    { id: 'pr-0206', title: 'Extracción de acuerdos de reuniones',             ver: 'v11',status: 'approved',  owner: 'Marc Oller',  updated: '2sem',     tags: ['reuniones', 'extracción'], runs: 5610 },
+    { id: 'pr-0205', title: 'Redactor de comunicaciones a cliente (ES/PT)',    ver: 'v6', status: 'approved',  owner: 'Nora Vila',   updated: '2sem',     tags: ['comunicaciones', 'i18n'], runs: 3480 },
+    { id: 'pr-0204', title: 'Traductor de logs técnicos a lenguaje de negocio',ver: 'v3', status: 'draft',     owner: 'Luis Ibáñez', updated: '3h',       tags: ['ops', 'reporting'], runs: 0 },
+    { id: 'pr-0203', title: 'Clasificador legacy de tickets Jira',             ver: 'v2', status: 'deprecated',owner: 'Marc Oller',  updated: '3m',       tags: ['legacy', 'ops'], runs: 210 },
+  ],
+
+  featuredPrompt: {
+    id: 'pr-0214',
+    title: 'Resumen ejecutivo de llamada a cliente',
+    description: 'Produce un resumen estructurado para C-level sobre una llamada con cliente corporativo. Incluye decisiones, acuerdos, riesgos y next-actions.',
+    version: 'v4 · borrador',
+    status: 'draft',
+    tags: ['llamadas', 'resumen', 'C-level', 'banking'],
+    body:
+`Eres un analista senior de {{unidad_negocio}} en Latinia. Se te proporciona la transcripción de una llamada con el cliente {{nombre_cliente}}.
+
+Produce un resumen ejecutivo en {{idioma}} con esta estructura exacta:
+
+## Contexto de la llamada
+1-2 frases con el motivo y participantes.
+
+## Decisiones acordadas
+Bullet list. Cada decisión en una línea, con dueño entre paréntesis si se mencionó.
+
+## Riesgos y bloqueos
+Bullet list. Sé específico — cita cifras, fechas y contrapartes.
+
+## Next actions
+Formato: "[Responsable] — Acción — Fecha compromiso".
+
+## Tono del análisis
+Adopta un tono {{tono_respuesta}} y mantén la longitud por debajo de {{max_palabras}} palabras.
+
+--- TRANSCRIPCIÓN ---
+{{transcript_texto}}
+--- FIN ---`,
+    variables: [
+      { name: 'unidad_negocio',   type: 'text',   default: 'Banking Notifications' },
+      { name: 'nombre_cliente',   type: 'text',   default: 'BBVA España' },
+      { name: 'idioma',           type: 'select', options: ['español', 'inglés', 'portugués'], default: 'español' },
+      { name: 'tono_respuesta',   type: 'select', options: ['formal', 'ejecutivo', 'didáctico', 'técnico'], default: 'ejecutivo' },
+      { name: 'max_palabras',     type: 'number', default: 350 },
+      { name: 'transcript_texto', type: 'longtext', default: '(Se inyecta desde módulo de Transcripciones)' },
+    ],
+    versions: [
+      { ver: 'v4', date: '19 abr 2026 · 09:42', author: 'Marc Oller',   note: 'Se separa “Riesgos y bloqueos” de “Next actions”',           status: 'draft' },
+      { ver: 'v3', date: '12 abr 2026 · 15:20', author: 'Helena Ruiz',  note: 'Se añade variable tono_respuesta y max_palabras',             status: 'approved' },
+      { ver: 'v2', date: '02 abr 2026 · 11:03', author: 'Marc Oller',   note: 'Mejora de estructura, bullets en vez de prosa',                status: 'deprecated' },
+      { ver: 'v1', date: '24 mar 2026 · 10:10', author: 'Marc Oller',   note: 'Creación inicial',                                             status: 'deprecated' },
+    ],
+  },
+
+  transcripts: [
+    { id: 'tr-8471', title: 'Comité de Riesgos · Q1 wrap-up',         dur: '47:12', size: '42 MB', lang: 'ES', status: 'ok',            progress: 100, date: 'hoy, 09:15', tags: ['riesgos', 'interno'] },
+    { id: 'tr-8470', title: 'Call BBVA — implementación MT-940',      dur: '1:02:40', size: '58 MB', lang: 'ES', status: 'ok',          progress: 100, date: 'ayer, 17:30', tags: ['BBVA', 'cliente'] },
+    { id: 'tr-8469', title: 'Onboarding cliente · Grupo Santander',   dur: '38:55', size: '35 MB', lang: 'ES', status: 'transcribing', progress: 62,  date: 'ayer, 11:00', tags: ['santander', 'onboarding'] },
+    { id: 'tr-8468', title: 'Retro sprint 42 · Notification platform',dur: '52:07', size: '47 MB', lang: 'ES', status: 'ok',           progress: 100, date: '17 abr',      tags: ['interno', 'retro'] },
+    { id: 'tr-8467', title: 'Due diligence · ABN AMRO',               dur: '1:14:22',size: '68 MB', lang: 'EN', status: 'error',       progress: 0,   date: '16 abr',      tags: ['m&a'] },
+    { id: 'tr-8466', title: 'Roadmap 2026 — Comercial LatAm',         dur: '1:24:10',size: '76 MB', lang: 'ES', status: 'ok',          progress: 100, date: '15 abr',      tags: ['latam', 'roadmap'] },
+    { id: 'tr-8465', title: 'Sesión regulatoria · MiFID II update',   dur: '48:00', size: '44 MB', lang: 'ES', status: 'ok',           progress: 100, date: '14 abr',      tags: ['compliance'] },
+    { id: 'tr-8464', title: 'Incidente P1 postmortem · Pasarela SMS', dur: '33:18', size: '29 MB', lang: 'ES', status: 'uploading',    progress: 18,  date: '14 abr',      tags: ['ops', 'incidente'] },
+    { id: 'tr-8463', title: 'Call cliente CaixaBank — renovación',    dur: '29:44', size: '26 MB', lang: 'ES', status: 'ok',           progress: 100, date: '13 abr',      tags: ['caixabank'] },
+  ],
+
+  featuredTranscript: {
+    id: 'tr-8470',
+    title: 'Call BBVA — implementación MT-940',
+    dur: '1:02:40',
+    status: 'ok',
+    lang: 'ES',
+    tags: ['BBVA', 'cliente', 'MT-940', 'banking'],
+    meta: { participantes: 5, editor: 'Helena Ruiz (última edición hace 1h)' },
+    blocks: [
+      { t: '00:00',  speaker: 'J. Aguilar (BBVA)', text: 'Buenos días Helena, antes de entrar en materia quería agradecer la disponibilidad del equipo de Latinia durante el piloto.' },
+      { t: '00:18',  speaker: 'H. Ruiz',           text: 'Gracias Javier, al contrario. Os hemos preparado un resumen del piloto MT-940 con los volúmenes reales de marzo.' },
+      { t: '00:42',  speaker: 'H. Ruiz',           text: 'En total procesamos 4,2 millones de notificaciones con una latencia media de 780 ms end-to-end. El SLA del 99,95% se mantuvo toda la ventana.' },
+      { t: '01:28',  speaker: 'J. Aguilar (BBVA)', text: 'Muy bien. Lo que nos preocupa ahora es la parte de conciliación de saldos en los tramos overnight. Detectasteis algo?' },
+      { t: '02:04',  speaker: 'M. Oller',          text: 'Sí. Hay una ventana entre 02:00 y 02:15 UTC donde los extractos MT-940 del core bancario llegan con 6 a 9 minutos de retraso. Afecta al 1,3% de las notificaciones push.' },
+      { t: '02:44',  speaker: 'J. Aguilar (BBVA)', text: 'Lo hablamos con core banking. Podéis proponer una mitigación por vuestro lado antes de subirlo al comité?' },
+      { t: '03:05',  speaker: 'M. Oller',          text: 'Proponemos reintento exponencial con ventana de 20 minutos y fallback a polling cada 90 segundos durante la ventana nocturna. Impacto en coste estimado < 2%.' },
+      { t: '03:40',  speaker: 'H. Ruiz',           text: 'Nos comprometemos a entregaros un documento técnico de mitigación esta misma semana, viernes como máximo.' },
+      { t: '04:12',  speaker: 'J. Aguilar (BBVA)', text: 'Perfecto. Por nuestra parte también vamos a revisar el contrato de SLA con core para acortar esos 15 minutos. Quién lleva la firma por Latinia?' },
+      { t: '04:35',  speaker: 'H. Ruiz',           text: 'Diego Soto, de legal. Le pongo en copia al mail de cierre.' },
+    ],
+  },
+
+  connectors: [
+    { id: 'confluence', name: 'Atlassian Confluence', desc: 'Publica resultados como páginas Confluence con etiquetas.', enabled: true,  status: 'ok',   scope: 'Espacio: BANKING, RISK', lastUsed: 'hace 12 min' },
+    { id: 'jira',       name: 'Atlassian Jira',       desc: 'Crea issues a partir de decisiones y next-actions.',        enabled: true,  status: 'ok',   scope: 'Proyecto: NOTIF, COMP',  lastUsed: 'hace 2 h' },
+    { id: 'slack',      name: 'Slack',                desc: 'Envía resúmenes a canales definidos con botones de acción.', enabled: true,  status: 'ok',   scope: '#banking-ops, #compliance', lastUsed: 'hace 1 h' },
+    { id: 'teams',      name: 'Microsoft Teams',      desc: 'Mensajería corporativa y adaptive cards.',                   enabled: false, status: 'off',  scope: '—',                      lastUsed: 'nunca' },
+    { id: 'sharepoint', name: 'SharePoint Online',    desc: 'Archiva outputs como documentos firmados digitalmente.',     enabled: true,  status: 'warn', scope: 'Sitio: Governance/IA',  lastUsed: 'hace 3 d' },
+    { id: 'email',      name: 'Email (SMTP)',         desc: 'Envía resultados como emails transaccionales.',               enabled: true,  status: 'ok',   scope: 'relay.latinia.com',      lastUsed: 'hace 8 min' },
+    { id: 'webhook',    name: 'Webhook genérico',     desc: 'POST JSON a una URL, con firmado HMAC opcional.',             enabled: true,  status: 'ok',   scope: '3 webhooks activos',     lastUsed: 'hace 34 min' },
+    { id: 'zapier',     name: 'Zapier',               desc: 'Conecta el output con +5000 apps vía Zapier.',                enabled: false, status: 'off', scope: '—',                      lastUsed: 'nunca' },
+  ],
+
+  executions: [
+    { id: 'ex-00031285', at: '19 abr 10:04:12', user: 'sistema.notify@latinia',  prompt: 'pr-0209 · v12', transcript: '—',        model: 'GPT-4o',      tokens: 1842,  cost: 0.0046, latency: 980,  status: 'success' },
+    { id: 'ex-00031284', at: '19 abr 10:03:58', user: 'helena.ruiz@latinia',     prompt: 'pr-0214 · v4',  transcript: 'tr-8470',  model: 'Claude 3.5',   tokens: 3412, cost: 0.0104, latency: 2340, status: 'success' },
+    { id: 'ex-00031283', at: '19 abr 10:03:41', user: 'marc.oller@latinia',      prompt: 'pr-0210 · v5',  transcript: 'tr-8471',  model: 'GPT-4o',      tokens: 2204,  cost: 0.0071, latency: 1540, status: 'success' },
+    { id: 'ex-00031282', at: '19 abr 10:02:09', user: 'sistema.notify@latinia',  prompt: 'pr-0209 · v12', transcript: '—',        model: 'GPT-4o',      tokens: 1680,  cost: 0.0042, latency: 880,  status: 'success' },
+    { id: 'ex-00031281', at: '19 abr 10:01:52', user: 'diego.soto@latinia',      prompt: 'pr-0212 · v7',  transcript: 'tr-8465',  model: 'Azure GPT-4',  tokens: 5120, cost: 0.0170, latency: 3420, status: 'success' },
+    { id: 'ex-00031280', at: '19 abr 10:01:10', user: 'api-integration-webhook', prompt: 'pr-0208 · v2',  transcript: '—',        model: 'GPT-4o-mini', tokens: 612,   cost: 0.0009, latency: 420,  status: 'success' },
+    { id: 'ex-00031279', at: '19 abr 10:00:47', user: 'nora.vila@latinia',       prompt: 'pr-0205 · v6',  transcript: '—',        model: 'GPT-4o',      tokens: 3014,  cost: 0.0095, latency: 2110, status: 'success' },
+    { id: 'ex-00031278', at: '19 abr 10:00:21', user: 'sara.klein@latinia',      prompt: 'pr-0209 · v12', transcript: '—',        model: 'Claude 3.5',   tokens: 2870, cost: 0.0086, latency: 1820, status: 'failed' },
+    { id: 'ex-00031277', at: '19 abr 09:59:54', user: 'api-integration-webhook', prompt: 'pr-0214 · v3',  transcript: 'tr-8466',  model: 'GPT-4o',      tokens: 4108,  cost: 0.0133, latency: 2640, status: 'success' },
+    { id: 'ex-00031276', at: '19 abr 09:59:12', user: 'irene.paez@latinia',      prompt: 'pr-0213 · v2',  transcript: '—',        model: 'GPT-4o-mini', tokens: 512,   cost: 0.0008, latency: 380,  status: 'success' },
+    { id: 'ex-00031275', at: '19 abr 09:58:40', user: 'sistema.notify@latinia',  prompt: 'pr-0209 · v12', transcript: '—',        model: 'GPT-4o',      tokens: 1744,  cost: 0.0044, latency: 920,  status: 'success' },
+    { id: 'ex-00031274', at: '19 abr 09:58:15', user: 'helena.ruiz@latinia',     prompt: 'pr-0207 · v8',  transcript: 'tr-8471',  model: 'Claude 3.5',   tokens: 2960, cost: 0.0089, latency: 1980, status: 'success' },
+  ],
+
+  users: [
+    { name: 'Helena Ruiz',    email: 'helena.ruiz@latinia.com',   role: 'Administrador', unit: 'Governance',  mfa: true,  lastSeen: 'ahora' },
+    { name: 'Marc Oller',     email: 'marc.oller@latinia.com',    role: 'Editor',        unit: 'Banking',     mfa: true,  lastSeen: 'hace 12 min' },
+    { name: 'Diego Soto',     email: 'diego.soto@latinia.com',    role: 'Aprobador',     unit: 'Legal',       mfa: true,  lastSeen: 'hace 1 h' },
+    { name: 'Irene Páez',     email: 'irene.paez@latinia.com',    role: 'Editor',        unit: 'Ops',         mfa: false, lastSeen: 'ayer' },
+    { name: 'Sara Klein',     email: 'sara.klein@latinia.com',    role: 'Administrador', unit: 'Security',    mfa: true,  lastSeen: 'hace 2h' },
+    { name: 'Nora Vila',      email: 'nora.vila@latinia.com',     role: 'Editor',        unit: 'Product',     mfa: true,  lastSeen: 'ayer' },
+    { name: 'Diego Márquez',  email: 'diego.marquez@latinia.com', role: 'Consumidor',    unit: 'Commercial',  mfa: false, lastSeen: '3d' },
+    { name: 'Luis Ibáñez',    email: 'luis.ibanez@latinia.com',   role: 'Editor',        unit: 'Platform',    mfa: true,  lastSeen: 'hace 18 min' },
+    { name: 'Carla Moreno',   email: 'carla.moreno@latinia.com',  role: 'Aprobador',     unit: 'Risk',        mfa: true,  lastSeen: '2d' },
+  ],
+
+  providers: [
+    { name: 'OpenAI',           kind: 'LLM',  models: 'GPT-4o, GPT-4o-mini, GPT-4 Turbo', status: 'ok', region: 'EU · ireland',   keyHint: 'sk-...a8c2' },
+    { name: 'Anthropic',        kind: 'LLM',  models: 'Claude 3.5 Sonnet, Claude 3 Haiku', status: 'ok', region: 'EU · frankfurt', keyHint: 'ant-...42fa' },
+    { name: 'Azure OpenAI',     kind: 'LLM',  models: 'GPT-4 Turbo, GPT-3.5',             status: 'ok', region: 'Azure west-eu',  keyHint: 'az-...c021' },
+    { name: 'OpenAI Whisper',   kind: 'ASR',  models: 'whisper-large-v3',                 status: 'ok', region: 'EU · ireland',   keyHint: 'sk-...a8c2' },
+    { name: 'AssemblyAI',       kind: 'ASR',  models: 'Universal-2',                      status: 'warn', region: 'US · virginia',keyHint: 'aai-...7812' },
+  ],
+
+  notifications: [
+    { tone: 'success', icon: 'check-circle', title: 'Prompt pr-0208 aprobado',       sub: 'Diego Soto acaba de aprobar v2',               at: 'ahora' },
+    { tone: 'primary', icon: 'wave',         title: 'Transcribiendo tr-8469',         sub: 'Onboarding cliente · Grupo Santander · 62%',   at: 'hace 2 min' },
+    { tone: 'warn',    icon: 'warn',         title: 'Coste mensual al 74% del plan',  sub: '8.942 / 12.000 ejecuciones consumidas',        at: 'hace 18 min' },
+    { tone: 'error',   icon: 'x-circle',     title: 'Ejecución ex-00031278 fallida',   sub: 'Claude 3.5 · rate limit 429',                  at: 'hace 1 h' },
+  ],
+};
+
+window.DATA = DATA;
+
+
+// ====== icons.jsx ======
+// Icons — minimal stroke icons, 20x20 viewBox, strokeWidth 1.6
+const Icon = ({ name, size = 18, className = '', style = {} }) => {
+  const s = { width: size, height: size, ...style };
+  const common = {
+    viewBox: '0 0 20 20', fill: 'none',
+    stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round',
+    style: s, className,
+  };
+  switch (name) {
+    case 'dashboard': return <svg {...common}><rect x="3" y="3" width="6" height="8" rx="1.2"/><rect x="3" y="13" width="6" height="4" rx="1.2"/><rect x="11" y="3" width="6" height="4" rx="1.2"/><rect x="11" y="9" width="6" height="8" rx="1.2"/></svg>;
+    case 'prompts':   return <svg {...common}><path d="M4 5h12M4 10h8M4 15h12"/><circle cx="16" cy="10" r="1.2" fill="currentColor" stroke="none"/></svg>;
+    case 'audio':     return <svg {...common}><path d="M10 3v14M6 7v6M14 7v6M3 9v2M17 9v2"/></svg>;
+    case 'play':      return <svg {...common}><path d="M6 4l10 6-10 6V4z"/></svg>;
+    case 'history':   return <svg {...common}><path d="M3 10a7 7 0 1 0 2-4.95L3 7m0 0V3m0 4h4"/><path d="M10 6v5l3 2"/></svg>;
+    case 'connectors':return <svg {...common}><circle cx="5.5" cy="10" r="2.5"/><circle cx="14.5" cy="5" r="2.5"/><circle cx="14.5" cy="15" r="2.5"/><path d="M8 9l4-3M8 11l4 3"/></svg>;
+    case 'admin':     return <svg {...common}><path d="M10 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 17c1.5-3 4-4.5 7-4.5s5.5 1.5 7 4.5"/></svg>;
+    case 'search':    return <svg {...common}><circle cx="9" cy="9" r="5.5"/><path d="M13.5 13.5L17 17"/></svg>;
+    case 'bell':      return <svg {...common}><path d="M5 8a5 5 0 1 1 10 0c0 3 1 5 1.5 5.5h-13C4 13 5 11 5 8z"/><path d="M8.5 16.5a1.5 1.5 0 0 0 3 0"/></svg>;
+    case 'plus':      return <svg {...common}><path d="M10 4v12M4 10h12"/></svg>;
+    case 'upload':    return <svg {...common}><path d="M10 14V3M6 7l4-4 4 4M3 14v3h14v-3"/></svg>;
+    case 'download':  return <svg {...common}><path d="M10 3v11M6 10l4 4 4-4M3 17h14"/></svg>;
+    case 'send':      return <svg {...common}><path d="M17 3L3 9l6 2 2 6 6-14z"/><path d="M9 11l4-4"/></svg>;
+    case 'chevron-r': return <svg {...common}><path d="M7 4l6 6-6 6"/></svg>;
+    case 'chevron-l': return <svg {...common}><path d="M13 4l-6 6 6 6"/></svg>;
+    case 'chevron-d': return <svg {...common}><path d="M4 7l6 6 6-6"/></svg>;
+    case 'check':     return <svg {...common}><path d="M4 10l4 4 8-8"/></svg>;
+    case 'x':         return <svg {...common}><path d="M5 5l10 10M15 5L5 15"/></svg>;
+    case 'more':      return <svg {...common}><circle cx="5" cy="10" r="1.2" fill="currentColor" stroke="none"/><circle cx="10" cy="10" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1.2" fill="currentColor" stroke="none"/></svg>;
+    case 'filter':    return <svg {...common}><path d="M3 5h14l-5 6v4l-4 2v-6L3 5z"/></svg>;
+    case 'copy':      return <svg {...common}><rect x="6" y="6" width="10" height="10" rx="1.5"/><path d="M4 12V5a1 1 0 0 1 1-1h7"/></svg>;
+    case 'edit':      return <svg {...common}><path d="M13 4l3 3-8 8H5v-3l8-8z"/></svg>;
+    case 'duplicate': return <svg {...common}><rect x="4" y="4" width="9" height="9" rx="1.5"/><path d="M7 16h7a2 2 0 0 0 2-2V7"/></svg>;
+    case 'branch':    return <svg {...common}><circle cx="5" cy="5" r="1.6"/><circle cx="5" cy="15" r="1.6"/><circle cx="15" cy="5" r="1.6"/><path d="M5 7v6M5 10c0-3 3-5 10-5"/></svg>;
+    case 'version':   return <svg {...common}><circle cx="6" cy="6" r="1.6"/><circle cx="6" cy="14" r="1.6"/><circle cx="14" cy="10" r="1.6"/><path d="M6 8v4M7 6h6M7 14h6"/></svg>;
+    case 'eye':       return <svg {...common}><path d="M2 10s3-5 8-5 8 5 8 5-3 5-8 5-8-5-8-5z"/><circle cx="10" cy="10" r="2.2"/></svg>;
+    case 'code':      return <svg {...common}><path d="M7 6l-4 4 4 4M13 6l4 4-4 4M11.5 4L8.5 16"/></svg>;
+    case 'mic':       return <svg {...common}><rect x="8" y="3" width="4" height="9" rx="2"/><path d="M5 10a5 5 0 0 0 10 0M10 15v2"/></svg>;
+    case 'wave':      return <svg {...common}><path d="M3 10h2M7 6v8M9 8v4M11 5v10M13 8v4M15 6v8M17 10h0"/></svg>;
+    case 'clock':     return <svg {...common}><circle cx="10" cy="10" r="7"/><path d="M10 6v4l3 2"/></svg>;
+    case 'calendar':  return <svg {...common}><rect x="3" y="5" width="14" height="12" rx="1.5"/><path d="M3 8h14M7 3v4M13 3v4"/></svg>;
+    case 'tag':       return <svg {...common}><path d="M10 3H4a1 1 0 0 0-1 1v6l7 7 7-7-7-7z"/><circle cx="7" cy="7" r="1" fill="currentColor" stroke="none"/></svg>;
+    case 'user':      return <svg {...common}><circle cx="10" cy="7" r="3.5"/><path d="M3 17c1.5-3 4-4.5 7-4.5s5.5 1.5 7 4.5"/></svg>;
+    case 'settings':  return <svg {...common}><circle cx="10" cy="10" r="2.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.3 4.3l1.4 1.4M14.3 14.3l1.4 1.4M4.3 15.7l1.4-1.4M14.3 5.7l1.4-1.4"/></svg>;
+    case 'logout':    return <svg {...common}><path d="M9 5V3H3v14h6v-2M7 10h11M15 6l4 4-4 4"/></svg>;
+    case 'sun':       return <svg {...common}><circle cx="10" cy="10" r="3.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.3 4.3l1.4 1.4M14.3 14.3l1.4 1.4M4.3 15.7l1.4-1.4M14.3 5.7l1.4-1.4"/></svg>;
+    case 'moon':      return <svg {...common}><path d="M16 12a6 6 0 0 1-8-8 7 7 0 1 0 8 8z"/></svg>;
+    case 'sparkle':   return <svg {...common}><path d="M10 3v4M10 13v4M3 10h4M13 10h4M5 5l2.5 2.5M12.5 12.5L15 15M5 15l2.5-2.5M12.5 7.5L15 5"/></svg>;
+    case 'zap':       return <svg {...common}><path d="M11 3L4 11h5l-1 6 7-8h-5l1-6z"/></svg>;
+    case 'shield':    return <svg {...common}><path d="M10 3l6 2v5c0 4-3 6-6 7-3-1-6-3-6-7V5l6-2z"/><path d="M7 10l2 2 4-4"/></svg>;
+    case 'key':       return <svg {...common}><circle cx="7" cy="13" r="3"/><path d="M9 11l7-7 2 2-2 2 1 1-2 2-1-1-2 2"/></svg>;
+    case 'menu':      return <svg {...common}><path d="M3 6h14M3 10h14M3 14h14"/></svg>;
+    case 'sidebar':   return <svg {...common}><rect x="3" y="4" width="14" height="12" rx="1.5"/><path d="M8 4v12"/></svg>;
+    case 'pin':       return <svg {...common}><path d="M10 3l3 3-1 4 3 3h-4l-1 4-1-4H5l3-3-1-4 3-3z"/></svg>;
+    case 'database':  return <svg {...common}><ellipse cx="10" cy="5" rx="6" ry="2"/><path d="M4 5v5c0 1.1 2.7 2 6 2s6-.9 6-2V5M4 10v5c0 1.1 2.7 2 6 2s6-.9 6-2v-5"/></svg>;
+    case 'terminal':  return <svg {...common}><path d="M4 6l3 3-3 3M9 13h7"/><rect x="2" y="3" width="16" height="14" rx="1.5"/></svg>;
+    case 'variable':  return <svg {...common}><path d="M5 4c-2 2-2 10 0 12M15 4c2 2 2 10 0 12"/><path d="M8 8l4 4M12 8l-4 4"/></svg>;
+    case 'lightning': return <svg {...common}><path d="M11 2L4 12h5l-1 6 7-10h-5l1-6z"/></svg>;
+    case 'arrow-up':  return <svg {...common}><path d="M5 12l5-5 5 5"/></svg>;
+    case 'arrow-dn':  return <svg {...common}><path d="M5 8l5 5 5-5"/></svg>;
+    case 'arrow-r':   return <svg {...common}><path d="M4 10h12M11 5l5 5-5 5"/></svg>;
+    case 'info':      return <svg {...common}><circle cx="10" cy="10" r="7"/><path d="M10 9v5M10 6h0"/></svg>;
+    case 'warn':      return <svg {...common}><path d="M10 3l7 13H3L10 3z"/><path d="M10 8v4M10 14h0"/></svg>;
+    case 'check-circle': return <svg {...common}><circle cx="10" cy="10" r="7"/><path d="M7 10l2 2 4-4"/></svg>;
+    case 'x-circle':     return <svg {...common}><circle cx="10" cy="10" r="7"/><path d="M7 7l6 6M13 7l-6 6"/></svg>;
+    case 'file':      return <svg {...common}><path d="M6 3h5l4 4v10a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M11 3v4h4"/></svg>;
+    case 'file-audio':return <svg {...common}><path d="M6 3h5l4 4v10a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M11 3v4h4"/><path d="M8 11v3M10 10v4M12 12v2"/></svg>;
+    case 'globe':     return <svg {...common}><circle cx="10" cy="10" r="7"/><path d="M3 10h14M10 3c2.5 2 2.5 12 0 14M10 3c-2.5 2-2.5 12 0 14"/></svg>;
+    case 'link':      return <svg {...common}><path d="M9 11a3 3 0 0 1 0-4l2-2a3 3 0 0 1 4 4l-1 1M11 9a3 3 0 0 1 0 4l-2 2a3 3 0 0 1-4-4l1-1"/></svg>;
+    case 'refresh':   return <svg {...common}><path d="M3 10a7 7 0 0 1 12-5l2 2M17 10a7 7 0 0 1-12 5l-2-2"/><path d="M17 3v4h-4M3 17v-4h4"/></svg>;
+    case 'bolt':      return <svg {...common}><path d="M11 3l-6 9h4l-1 5 6-9h-4l1-5z"/></svg>;
+    case 'flag':      return <svg {...common}><path d="M4 3v14M4 4h9l-2 3 2 3H4"/></svg>;
+    case 'thermo':    return <svg {...common}><path d="M10 3a2 2 0 0 1 2 2v7a3.5 3.5 0 1 1-4 0V5a2 2 0 0 1 2-2z"/></svg>;
+    default: return <svg {...common}><circle cx="10" cy="10" r="1" fill="currentColor" stroke="none"/></svg>;
+  }
+};
+
+window.Icon = Icon;
+
+
+// ====== primitives.jsx ======
+// Primitives: Badge, StatusBadge, Chart helpers, Toast host, Drawer, Modal
+const { useState, useEffect, useRef, useMemo, useLayoutEffect, createContext, useContext } = React;
+
+const StatusBadge = ({ status }) => {
+  const map = {
+    approved:   { cls: 'badge-success',  label: 'Aprobado' },
+    pending:    { cls: 'badge-warning',  label: 'Pendiente' },
+    draft:      { cls: 'badge-neutral',  label: 'Borrador' },
+    deprecated: { cls: 'badge-neutral',  label: 'Deprecado' },
+    ok:         { cls: 'badge-success',  label: 'Completado' },
+    transcribing:{cls: 'badge-primary',  label: 'Transcribiendo' },
+    uploading:  { cls: 'badge-primary',  label: 'Subiendo' },
+    error:      { cls: 'badge-error',    label: 'Error' },
+    failed:     { cls: 'badge-error',    label: 'Failed' },
+    success:    { cls: 'badge-success',  label: 'Success' },
+    warn:       { cls: 'badge-warning',  label: 'Atención' },
+    off:        { cls: 'badge-neutral',  label: 'Off' },
+  };
+  const c = map[status] || map.draft;
+  return (
+    <span className={`badge ${c.cls}`}>
+      <span className="bullet" />
+      {c.label}
+    </span>
+  );
+};
+
+// --- Chart: Line/Area sparkline ---
+const AreaChart = ({ data, w = 560, h = 160, accessor = d => d.exec, labels = d => d.w, color = '#023039', fill = 'rgba(2, 48, 57, 0.10)' }) => {
+  const padL = 36, padR = 10, padT = 12, padB = 28;
+  const iw = w - padL - padR, ih = h - padT - padB;
+  const ys = data.map(accessor);
+  const maxY = Math.max(...ys);
+  const minY = 0;
+  const xAt = i => padL + (i / (data.length - 1)) * iw;
+  const yAt = v => padT + ih - ((v - minY) / (maxY - minY)) * ih;
+  const pathD = data.map((d, i) => `${i === 0 ? 'M' : 'L'} ${xAt(i)} ${yAt(accessor(d))}`).join(' ');
+  const areaD = `${pathD} L ${xAt(data.length - 1)} ${padT + ih} L ${xAt(0)} ${padT + ih} Z`;
+  const ticks = [0, 0.5, 1].map(t => Math.round(maxY * t));
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={h} style={{ display: 'block' }}>
+      {ticks.map((t, i) => {
+        const y = yAt(t);
+        return (
+          <g key={i}>
+            <line x1={padL} x2={w - padR} y1={y} y2={y} stroke="var(--surface_container_highest)" strokeDasharray="2 4" />
+            <text x={padL - 8} y={y + 3} textAnchor="end" fontSize="10" fontFamily="JetBrains Mono" fill="var(--outline)">{t.toLocaleString()}</text>
+          </g>
+        );
+      })}
+      <path d={areaD} fill={fill} />
+      <path d={pathD} fill="none" stroke={color} strokeWidth="2" />
+      {data.map((d, i) => (
+        <circle key={i} cx={xAt(i)} cy={yAt(accessor(d))} r="3.5" fill="var(--surface_container_lowest)" stroke={color} strokeWidth="2" />
+      ))}
+      {data.map((d, i) => (
+        <text key={i} x={xAt(i)} y={h - 8} textAnchor="middle" fontSize="10" fontFamily="JetBrains Mono" fill="var(--outline)">{labels(d)}</text>
+      ))}
+    </svg>
+  );
+};
+
+// --- Donut ---
+const Donut = ({ data, size = 160, thickness = 18 }) => {
+  const total = data.reduce((a, b) => a + b.pct, 0);
+  const r = size / 2 - thickness / 2 - 2;
+  const c = size / 2;
+  let acc = 0;
+  const circ = 2 * Math.PI * r;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <circle cx={c} cy={c} r={r} stroke="var(--surface_container)" strokeWidth={thickness} fill="none" />
+      {data.map((d, i) => {
+        const frac = d.pct / total;
+        const dash = frac * circ;
+        const offset = -acc * circ;
+        acc += frac;
+        return (
+          <circle
+            key={i} cx={c} cy={c} r={r} fill="none"
+            stroke={d.color} strokeWidth={thickness}
+            strokeDasharray={`${dash} ${circ - dash}`}
+            strokeDashoffset={offset}
+            transform={`rotate(-90 ${c} ${c})`}
+            strokeLinecap="butt"
+          />
+        );
+      })}
+    </svg>
+  );
+};
+
+// --- Bars ---
+const BarChart = ({ data, w = 320, h = 100, accessor = d => d.approvals, color = '#7b5456' }) => {
+  const max = Math.max(...data.map(accessor));
+  const bw = (w - 10) / data.length - 6;
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={h}>
+      {data.map((d, i) => {
+        const bh = (accessor(d) / max) * (h - 20);
+        const x = 5 + i * (bw + 6);
+        const y = h - bh - 16;
+        return (
+          <g key={i}>
+            <rect x={x} y={y} width={bw} height={bh} rx="2" fill={color} opacity="0.9" />
+            <text x={x + bw / 2} y={h - 4} textAnchor="middle" fontSize="9" fontFamily="JetBrains Mono" fill="var(--outline)">{d.w.slice(-2)}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+};
+
+// --- Toast host ---
+const ToastContext = createContext(null);
+const ToastProvider = ({ children }) => {
+  const [toasts, setToasts] = useState([]);
+  const toast = (t) => {
+    const id = Math.random().toString(36).slice(2);
+    setToasts(list => [...list, { id, ...t }]);
+    setTimeout(() => setToasts(list => list.filter(x => x.id !== id)), t.duration || 3800);
+  };
+  return (
+    <ToastContext.Provider value={toast}>
+      {children}
+      <div className="toast-host">
+        {toasts.map(t => {
+          const toneColor = t.tone === 'success' ? 'var(--success)'
+                          : t.tone === 'error'   ? 'var(--error)'
+                          : t.tone === 'warn'    ? 'var(--warning)'
+                          : 'var(--primary_container)';
+          return (
+            <div className="toast" key={t.id}>
+              <div className="tico" style={{ color: toneColor }}>
+                <Icon name={t.icon || 'info'} size={18} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div className="ttitle">{t.title}</div>
+                {t.sub && <div className="tsub">{t.sub}</div>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </ToastContext.Provider>
+  );
+};
+const useToast = () => useContext(ToastContext);
+
+// --- Drawer ---
+const Drawer = ({ open, onClose, title, wide, children, footer }) => {
+  if (!open) return null;
+  return (
+    <>
+      <div className="drawer-overlay" onClick={onClose} />
+      <aside className={`drawer ${wide ? 'wide' : ''}`} role="dialog" aria-modal="true">
+        <div className="drawer-header">
+          <div>
+            <div className="label-sm muted">Vellum · Drawer</div>
+            <div className="headline-sm" style={{ marginTop: 4 }}>{title}</div>
+          </div>
+          <button className="icon-btn" onClick={onClose} aria-label="Close"><Icon name="x" /></button>
+        </div>
+        <div className="drawer-body">{children}</div>
+        {footer && <div className="drawer-foot">{footer}</div>}
+      </aside>
+    </>
+  );
+};
+
+// --- Modal ---
+const Modal = ({ open, onClose, children, width }) => {
+  if (!open) return null;
+  return (
+    <div className="modal" onClick={onClose}>
+      <div className="modal-card" style={{ width }} onClick={e => e.stopPropagation()}>
+        {children}
+      </div>
+    </div>
+  );
+};
+
+// --- Prompt text rendered w/ variable pills ---
+const PromptText = ({ text }) => {
+  const parts = text.split(/(\{\{\s*[\w.-]+\s*\}\})/g);
+  return (
+    <div className="mono-block">
+      {parts.map((p, i) =>
+        /^\{\{.*\}\}$/.test(p)
+          ? <span className="prompt-var" key={i}>{p}</span>
+          : <span key={i}>{p}</span>
+      )}
+    </div>
+  );
+};
+
+// simulated streaming hook
+const useStreamingText = (fullText, active, speed = 22) => {
+  const [out, setOut] = useState('');
+  useEffect(() => {
+    if (!active) return;
+    setOut('');
+    let i = 0;
+    const id = setInterval(() => {
+      i += speed;
+      setOut(fullText.slice(0, i));
+      if (i >= fullText.length) clearInterval(id);
+    }, 30);
+    return () => clearInterval(id);
+  }, [active, fullText]);
+  return out;
+};
+
+window.StatusBadge = StatusBadge;
+window.AreaChart = AreaChart;
+window.Donut = Donut;
+window.BarChart = BarChart;
+window.ToastProvider = ToastProvider;
+window.useToast = useToast;
+window.Drawer = Drawer;
+window.Modal = Modal;
+window.PromptText = PromptText;
+window.useStreamingText = useStreamingText;
+
+
+// ====== shell.jsx ======
+// App shell — sidebar + topbar
+const NAV = [
+  { id: 'dashboard',    label: 'Dashboard',       icon: 'dashboard' },
+  { id: 'prompts',      label: 'Prompts',         icon: 'prompts', count: 147 },
+  { id: 'transcripts',  label: 'Transcripciones', icon: 'wave',    count: 312 },
+  { id: 'playground',   label: 'Playground',      icon: 'play' },
+];
+const NAV_GOV = [
+  { id: 'history',    label: 'Historial',   icon: 'history' },
+  { id: 'connectors', label: 'Conectores',  icon: 'connectors' },
+  { id: 'admin',      label: 'Administración', icon: 'admin' },
+];
+
+const Sidebar = ({ current, onNav, collapsed, onToggle }) => {
+  return (
+    <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
+      <div className="sidebar-brand">
+        <div className="brand-mark">V</div>
+        <span>Vellum</span>
+      </div>
+
+      <div className="nav-section">
+        {!collapsed && <div className="label-sm nav-section-label">Trabajo</div>}
+        {NAV.map(n => (
+          <button key={n.id} className={`nav-item ${current === n.id ? 'active' : ''}`} onClick={() => onNav(n.id)}>
+            <span className="ico"><Icon name={n.icon} /></span>
+            <span className="nav-item-label">{n.label}</span>
+            {!collapsed && n.count != null && <span className="count">{n.count}</span>}
+          </button>
+        ))}
+      </div>
+
+      <div className="nav-section">
+        {!collapsed && <div className="label-sm nav-section-label">Gobernanza</div>}
+        {NAV_GOV.map(n => (
+          <button key={n.id} className={`nav-item ${current === n.id ? 'active' : ''}`} onClick={() => onNav(n.id)}>
+            <span className="ico"><Icon name={n.icon} /></span>
+            <span className="nav-item-label">{n.label}</span>
+          </button>
+        ))}
+      </div>
+
+      <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <button className="nav-item" onClick={onToggle} title="Plegar sidebar">
+          <span className="ico"><Icon name="sidebar" /></span>
+          <span className="nav-item-label">{collapsed ? 'Expandir' : 'Plegar'}</span>
+        </button>
+        <div className="sidebar-footer">
+          <div className="avatar">{DATA.user.initials}</div>
+          <div className="avatar-meta">
+            <span className="name">{DATA.user.name}</span>
+            <span className="role">{DATA.user.role}</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+  );
+};
+
+const Topbar = ({ theme, onToggleTheme, onNotif, notifOpen }) => {
+  return (
+    <header className="topbar">
+      <div className="omnibar" onClick={() => alert('Omnibar · búsqueda global (demo)')}>
+        <Icon name="search" size={16} />
+        <span>Buscar prompts, transcripciones, ejecuciones…</span>
+        <kbd>⌘ K</kbd>
+      </div>
+      <div className="topbar-actions">
+        <button className="icon-btn" onClick={onToggleTheme} title="Tema">
+          <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
+        </button>
+        <button className="icon-btn" onClick={onNotif} title="Notificaciones">
+          <Icon name="bell" />
+          <span className="dot" />
+        </button>
+        <div style={{ width: 1, height: 24, background: 'var(--surface_container_highest)', margin: '0 4px' }} />
+        <div className="avatar" style={{ cursor: 'pointer' }} title={DATA.user.name}>{DATA.user.initials}</div>
+      </div>
+    </header>
+  );
+};
+
+const NotificationsPanel = ({ open, onClose }) => {
+  if (!open) return null;
+  return (
+    <>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={onClose} />
+      <div style={{
+        position: 'fixed', top: 60, right: 24, width: 360, zIndex: 41,
+        background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(20px)',
+        borderRadius: 14, boxShadow: '0 20px 40px rgba(2,48,57,0.12)',
+        padding: 12, animation: 'slide-up 180ms cubic-bezier(.2,.7,.2,1)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px 10px' }}>
+          <span className="title-md">Notificaciones</span>
+          <span className="label-sm muted">4 nuevas</span>
+        </div>
+        {DATA.notifications.map((n, i) => {
+          const tc = n.tone === 'success' ? 'var(--success)' : n.tone === 'error' ? 'var(--error)' : n.tone === 'warn' ? 'var(--warning)' : 'var(--primary_container)';
+          return (
+            <div key={i} style={{ display: 'flex', gap: 10, padding: 10, borderRadius: 8, cursor: 'pointer' }}
+                 onMouseEnter={e => e.currentTarget.style.background = 'var(--surface_container_low)'}
+                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+              <div style={{ color: tc, flex: 'none', marginTop: 2 }}><Icon name={n.icon} /></div>
+              <div style={{ flex: 1 }}>
+                <div className="title-md">{n.title}</div>
+                <div className="body-sm muted" style={{ marginTop: 2 }}>{n.sub}</div>
+                <div className="label-sm faint" style={{ marginTop: 4 }}>{n.at}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+};
+
+window.Sidebar = Sidebar;
+window.Topbar = Topbar;
+window.NotificationsPanel = NotificationsPanel;
+
+
+// ====== screen_login.jsx ======
+// Login screen
+const ScreenLogin = ({ onEnter }) => {
+  const [email, setEmail] = useState('helena.ruiz@latinia.com');
+  const [pw, setPw] = useState('••••••••••••');
+  const [loading, setLoading] = useState(false);
+  const submit = (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setTimeout(onEnter, 900);
+  };
+  return (
+    <div className="login-root">
+      <div className="login-hero">
+        <div className="hstack">
+          <div className="brand-mark" style={{ width: 36, height: 36, background: 'rgba(255,255,255,0.08)', color: 'white' }}>V</div>
+          <span className="title-lg" style={{ color: 'white' }}>Vellum</span>
+          <span className="label-sm" style={{ color: 'rgba(255,255,255,0.6)', marginLeft: 8 }}>AI Governance · v2.4</span>
+        </div>
+
+        <div style={{ maxWidth: 560 }}>
+          <div className="label-sm" style={{ color: 'rgba(255,255,255,0.55)', marginBottom: 20 }}>LATINIA · CORPORATE AI PLATFORM</div>
+          <h1 className="display-lg" style={{ margin: 0, color: 'white' }}>
+            Convierte cada prompt<br/>en un <em style={{ fontStyle: 'italic', color: 'var(--tertiary_container)' }}>activo auditable</em>.
+          </h1>
+          <p className="body-lg" style={{ color: 'rgba(255,255,255,0.72)', marginTop: 24, maxWidth: 480 }}>
+            La capa de gobernanza para el uso corporativo de IA: versionado, aprobación, ejecución trazable y conectores seguros con tus sistemas internos.
+          </p>
+        </div>
+
+        <div className="hstack" style={{ gap: 32, color: 'rgba(255,255,255,0.75)' }}>
+          <div>
+            <div className="display-md" style={{ color: 'white' }}>147</div>
+            <div className="label-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>PROMPTS APROBADOS</div>
+          </div>
+          <div>
+            <div className="display-md" style={{ color: 'white' }}>312<span style={{ fontSize: '1rem', marginLeft: 4 }}>h</span></div>
+            <div className="label-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>AUDIO GOBERNADO</div>
+          </div>
+          <div>
+            <div className="display-md" style={{ color: 'white' }}>99.95<span style={{ fontSize: '1rem', marginLeft: 4 }}>%</span></div>
+            <div className="label-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>SLA TRAZABILIDAD</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="login-form-col">
+        <form className="login-form" onSubmit={submit}>
+          <div className="label-sm muted" style={{ marginBottom: 12 }}>ACCESO CORPORATIVO</div>
+          <h2 className="headline-lg" style={{ margin: 0, marginBottom: 8 }}>Identifícate</h2>
+          <p className="body-md muted" style={{ marginBottom: 32 }}>
+            Usa tu cuenta corporativa Latinia para acceder a Vellum.
+          </p>
+
+          <div className="vstack" style={{ gap: 12, marginBottom: 20 }}>
+            <button type="button" className="btn btn-surface btn-lg" style={{ width: '100%', justifyContent: 'center' }}>
+              <Icon name="shield" size={16} /> Continuar con Microsoft
+            </button>
+            <button type="button" className="btn btn-surface btn-lg" style={{ width: '100%', justifyContent: 'center' }}>
+              <Icon name="globe" size={16} /> Continuar con Google Workspace
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '24px 0' }}>
+            <div style={{ flex: 1, height: 1, background: 'var(--surface_container_highest)' }} />
+            <span className="label-sm muted">O CON USUARIO</span>
+            <div style={{ flex: 1, height: 1, background: 'var(--surface_container_highest)' }} />
+          </div>
+
+          <div className="field" style={{ marginBottom: 16 }}>
+            <label className="field-label">Email corporativo</label>
+            <input className="input" value={email} onChange={e => setEmail(e.target.value)} />
+          </div>
+          <div className="field" style={{ marginBottom: 24 }}>
+            <label className="field-label">Contraseña</label>
+            <input type="password" className="input" value={pw} onChange={e => setPw(e.target.value)} />
+          </div>
+
+          <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%', justifyContent: 'center' }} disabled={loading}>
+            {loading ? <><span className="spinner" style={{ borderTopColor: 'white' }}/> Verificando…</> : <>Iniciar sesión <Icon name="arrow-r" size={16} /></>}
+          </button>
+
+          <div className="hstack" style={{ justifyContent: 'space-between', marginTop: 20 }}>
+            <a className="label-md" style={{ color: 'var(--primary_container)', cursor: 'pointer' }}>¿Olvidaste la contraseña?</a>
+            <span className="label-sm faint">SSO por SAML 2.0</span>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+window.ScreenLogin = ScreenLogin;
+
+
+// ====== screen_dashboard.jsx ======
+// Dashboard — Executive overview
+const ScreenDashboard = ({ onNav }) => {
+  const toast = useToast();
+  return (
+    <div className="page">
+      {/* Hero intro — editorial asymmetry */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 64, alignItems: 'end', marginBottom: 48 }}>
+        <div>
+          <div className="label-sm faint" style={{ marginBottom: 12 }}>19 ABRIL 2026 · RESUMEN EJECUTIVO</div>
+          <h1 className="display-md" style={{ margin: 0 }}>Buenos días, Helena.</h1>
+          <p className="body-lg muted" style={{ marginTop: 12, maxWidth: 520 }}>
+            Esta semana la plataforma ha procesado <strong>2,640 ejecuciones</strong>, un 11% por encima de la anterior. 4 prompts esperan tu aprobación.
+          </p>
+        </div>
+        <div className="hstack" style={{ gap: 12 }}>
+          <button className="btn btn-surface" onClick={() => onNav('transcripts')}>
+            <Icon name="upload" size={16} /> Subir audio
+          </button>
+          <button className="btn btn-secondary" onClick={() => onNav('prompts')}>
+            <Icon name="plus" size={16} /> Nuevo Prompt
+          </button>
+          <button className="btn btn-primary" onClick={() => onNav('playground')}>
+            <Icon name="play" size={16} /> Ejecutar tarea
+          </button>
+        </div>
+      </div>
+
+      {/* KPI cards */}
+      <div className="kpi-grid" style={{ marginBottom: 40 }}>
+        {DATA.kpis.map((k, i) => (
+          <div key={i} className="kpi">
+            <div className="kpi-label">{k.label}</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+              <span className="kpi-value">{k.value}</span>
+              {k.unit && <span className="kpi-unit">{k.unit}</span>}
+            </div>
+            <div className="kpi-foot">
+              <span className={`kpi-delta ${k.dir}`}>
+                <Icon name={k.dir === 'up' ? 'arrow-up' : 'arrow-dn'} size={12} /> {k.delta}
+              </span>
+              <span>{k.foot}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Charts row */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginBottom: 16 }}>
+        <div className="card-raised">
+          <div className="hstack" style={{ justifyContent: 'space-between', marginBottom: 8 }}>
+            <div>
+              <div className="label-sm muted">USO DE IA · ÚLTIMAS 8 SEMANAS</div>
+              <div className="headline-sm" style={{ marginTop: 4 }}>Ejecuciones por semana</div>
+            </div>
+            <div className="hstack" style={{ gap: 16 }}>
+              <span className="hstack" style={{ gap: 6 }}><span style={{ width: 10, height: 10, background: 'var(--primary_container)', borderRadius: 2 }}/> <span className="label-md muted">Ejecuciones</span></span>
+              <span className="hstack" style={{ gap: 6 }}><span style={{ width: 10, height: 10, background: 'var(--secondary)', borderRadius: 2 }}/> <span className="label-md muted">Aprobaciones</span></span>
+            </div>
+          </div>
+          <AreaChart data={DATA.weeklyUsage} h={240} w={760} />
+        </div>
+
+        <div className="card-raised">
+          <div className="label-sm muted">MIX DE MODELOS</div>
+          <div className="headline-sm" style={{ marginTop: 4, marginBottom: 20 }}>Modelo más utilizado</div>
+          <div className="hstack" style={{ gap: 20, alignItems: 'center' }}>
+            <div style={{ position: 'relative', flex: 'none' }}>
+              <Donut data={DATA.modelsBreakdown} size={160} thickness={20} />
+              <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', textAlign: 'center', pointerEvents: 'none' }}>
+                <div>
+                  <div className="display-md" style={{ fontSize: '2rem', lineHeight: 1 }}>{DATA.modelsBreakdown[0].pct}<span className="kpi-unit">%</span></div>
+                  <div className="label-sm muted">{DATA.modelsBreakdown[0].name}</div>
+                </div>
+              </div>
+            </div>
+            <div className="vstack" style={{ gap: 10, flex: 1 }}>
+              {DATA.modelsBreakdown.map(m => (
+                <div key={m.name} className="hstack" style={{ gap: 8 }}>
+                  <span style={{ width: 8, height: 8, background: m.color, borderRadius: 2, flex: 'none' }} />
+                  <span className="body-md">{m.name}</span>
+                  <span className="label-md muted" style={{ marginLeft: 'auto', fontFamily: 'JetBrains Mono' }}>{m.pct}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tables row */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="card-raised" style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '20px 24px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div className="label-sm muted">ACTIVIDAD RECIENTE</div>
+              <div className="headline-sm" style={{ marginTop: 4 }}>Últimas transcripciones</div>
+            </div>
+            <button className="btn btn-ghost btn-sm" onClick={() => onNav('transcripts')}>Ver todas <Icon name="chevron-r" size={14} /></button>
+          </div>
+          <table className="v-table">
+            <tbody>
+              {DATA.recentTranscripts.map(t => (
+                <tr key={t.id} onClick={() => onNav('transcripts')}>
+                  <td style={{ width: 24 }}>
+                    <Icon name={t.status === 'transcribing' ? 'wave' : t.status === 'error' ? 'warn' : 'file-audio'} size={16}
+                          style={{ color: t.status === 'error' ? 'var(--error)' : t.status === 'transcribing' ? 'var(--primary_container)' : 'var(--outline)' }} />
+                  </td>
+                  <td>
+                    <div className="title-md">{t.title}</div>
+                    <div className="label-sm muted" style={{ marginTop: 2 }}>{t.id} · {t.dur}</div>
+                  </td>
+                  <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    <StatusBadge status={t.status} />
+                    <div className="label-sm muted" style={{ marginTop: 4 }}>{t.date}</div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="card-raised" style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '20px 24px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div className="label-sm muted">REQUIEREN TU ATENCIÓN</div>
+              <div className="headline-sm" style={{ marginTop: 4 }}>Prompts pendientes de aprobación</div>
+            </div>
+            <button className="btn btn-ghost btn-sm" onClick={() => onNav('prompts')}>Ver todos <Icon name="chevron-r" size={14} /></button>
+          </div>
+          <table className="v-table">
+            <tbody>
+              {DATA.pendingApprovals.map(p => (
+                <tr key={p.id} onClick={() => onNav('prompts')}>
+                  <td>
+                    <div className="title-md">{p.title}</div>
+                    <div className="label-sm muted" style={{ marginTop: 2 }}>{p.id} · {p.ver} · {p.author}</div>
+                  </td>
+                  <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    <span className="label-sm muted" style={{ marginRight: 12 }}>hace {p.age}</span>
+                    <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); toast({ tone: 'success', icon: 'check-circle', title: 'Prompt aprobado', sub: `${p.title} (${p.ver})` }); }}>
+                      Revisar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div style={{ padding: '12px 24px 20px', background: 'var(--surface_container_low)', margin: '12px -1px -1px' }}>
+            <div className="hstack" style={{ gap: 12 }}>
+              <Icon name="info" size={16} style={{ color: 'var(--primary_container)' }} />
+              <span className="body-sm muted">Como aprobador, cualquier acción queda registrada en el log de auditoría con IP y timestamp.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+window.ScreenDashboard = ScreenDashboard;
+
+
+// ====== screen_prompts.jsx ======
+// Prompts — list / vault
+const ScreenPrompts = ({ onOpenPrompt }) => {
+  const [filter, setFilter] = useState('all');
+  const [view, setView] = useState('grid');
+  const [search, setSearch] = useState('');
+  const filtered = DATA.prompts.filter(p => {
+    if (filter !== 'all' && p.status !== filter) return false;
+    if (search && !p.title.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+  const counts = {
+    all: DATA.prompts.length,
+    approved: DATA.prompts.filter(p => p.status === 'approved').length,
+    pending: DATA.prompts.filter(p => p.status === 'pending').length,
+    draft: DATA.prompts.filter(p => p.status === 'draft').length,
+    deprecated: DATA.prompts.filter(p => p.status === 'deprecated').length,
+  };
+
+  return (
+    <div className="page page-wide">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 64, alignItems: 'end', marginBottom: 48 }}>
+        <div>
+          <div className="label-sm faint" style={{ marginBottom: 12 }}>CAJA FUERTE</div>
+          <h1 className="display-md" style={{ margin: 0 }}>Prompts</h1>
+          <p className="body-lg muted" style={{ marginTop: 12, maxWidth: 560 }}>
+            Cada prompt es un activo versionado, auditable y reutilizable. Aprobación obligatoria antes de productivo.
+          </p>
+        </div>
+        <div className="hstack" style={{ gap: 12 }}>
+          <button className="btn btn-surface"><Icon name="download" size={16} /> Exportar catálogo</button>
+          <button className="btn btn-primary" onClick={() => onOpenPrompt(DATA.featuredPrompt.id)}>
+            <Icon name="plus" size={16} /> Nuevo Prompt
+          </button>
+        </div>
+      </div>
+
+      {/* Filter bar */}
+      <div className="hstack" style={{ marginBottom: 24, gap: 8, flexWrap: 'wrap' }}>
+        <div className="tabs">
+          {[
+            { id: 'all',        label: 'Todos' },
+            { id: 'approved',   label: 'Aprobados' },
+            { id: 'pending',    label: 'Pendientes' },
+            { id: 'draft',      label: 'Borradores' },
+            { id: 'deprecated', label: 'Deprecados' },
+          ].map(t => (
+            <button key={t.id} className={`tab ${filter === t.id ? 'active' : ''}`} onClick={() => setFilter(t.id)}>
+              {t.label} <span className="label-sm muted" style={{ marginLeft: 4, fontFamily: 'JetBrains Mono' }}>{counts[t.id]}</span>
+            </button>
+          ))}
+        </div>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ position: 'relative' }}>
+            <input
+              className="input"
+              placeholder="Buscar por título, tag o autor…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{ width: 320, paddingLeft: 36 }}
+            />
+            <Icon name="search" size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--outline)' }} />
+          </div>
+          <button className="icon-btn" title="Filtros"><Icon name="filter" /></button>
+          <div style={{ width: 1, height: 24, background: 'var(--surface_container_highest)', margin: '0 4px' }} />
+          <button className={`icon-btn ${view === 'grid' ? '' : ''}`} style={{ background: view === 'grid' ? 'var(--surface_container_high)' : 'transparent' }} onClick={() => setView('grid')}><Icon name="dashboard" /></button>
+          <button className={`icon-btn`} style={{ background: view === 'list' ? 'var(--surface_container_high)' : 'transparent' }} onClick={() => setView('list')}><Icon name="menu" /></button>
+        </div>
+      </div>
+
+      {view === 'grid' ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
+          {filtered.map(p => (
+            <PromptCard key={p.id} p={p} onOpen={() => onOpenPrompt(p.id)} />
+          ))}
+        </div>
+      ) : (
+        <div className="table-wrap">
+          <table className="v-table">
+            <thead>
+              <tr>
+                <th>Prompt</th>
+                <th>Versión</th>
+                <th>Estado</th>
+                <th>Autor</th>
+                <th style={{ textAlign: 'right' }}>Ejecuciones</th>
+                <th>Actualizado</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(p => (
+                <tr key={p.id} onClick={() => onOpenPrompt(p.id)}>
+                  <td>
+                    <div className="title-md">{p.title}</div>
+                    <div className="label-sm muted" style={{ marginTop: 2 }}>{p.id} · {p.tags.slice(0,2).map(t => `#${t}`).join(' ')}</div>
+                  </td>
+                  <td><span className="mono-block" style={{ fontSize: '0.8125rem' }}>{p.ver}</span></td>
+                  <td><StatusBadge status={p.status} /></td>
+                  <td>{p.owner}</td>
+                  <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono' }}>{p.runs.toLocaleString()}</td>
+                  <td className="muted">{p.updated}</td>
+                  <td><button className="icon-btn" onClick={(e) => e.stopPropagation()}><Icon name="more" /></button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const PromptCard = ({ p, onOpen }) => {
+  return (
+    <div
+      onClick={onOpen}
+      style={{
+        background: 'var(--surface_container_lowest)',
+        borderRadius: 'var(--r-xl)',
+        padding: 24,
+        cursor: 'pointer',
+        transition: 'transform 120ms, box-shadow 120ms',
+        display: 'flex', flexDirection: 'column', gap: 16,
+        minHeight: 200,
+      }}
+      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = 'var(--shadow-md)'; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+    >
+      <div className="hstack" style={{ justifyContent: 'space-between' }}>
+        <StatusBadge status={p.status} />
+        <span className="mono-block label-sm muted">{p.ver}</span>
+      </div>
+      <div>
+        <div className="headline-sm" style={{ marginBottom: 6 }}>{p.title}</div>
+        <div className="label-sm muted font-mono">{p.id}</div>
+      </div>
+      <div className="hstack" style={{ gap: 6, flexWrap: 'wrap', marginTop: 'auto' }}>
+        {p.tags.slice(0, 3).map(t => <span key={t} className="chip">#{t}</span>)}
+      </div>
+      <div className="hstack" style={{ justifyContent: 'space-between', borderTop: 'none', paddingTop: 8 }}>
+        <div className="hstack" style={{ gap: 8 }}>
+          <div className="avatar" style={{ width: 24, height: 24, fontSize: 10 }}>{p.owner.split(' ').map(s=>s[0]).join('')}</div>
+          <span className="label-md muted">{p.owner}</span>
+        </div>
+        <span className="label-sm muted font-mono">{p.runs.toLocaleString()} runs</span>
+      </div>
+    </div>
+  );
+};
+
+window.ScreenPrompts = ScreenPrompts;
+
+
+// ====== screen_prompt_editor.jsx ======
+// Prompt editor — split view with Playground
+const ScreenPromptEditor = ({ onBack }) => {
+  const toast = useToast();
+  const p = DATA.featuredPrompt;
+  const [text, setText] = useState(p.body);
+  const [vars, setVars] = useState(() => Object.fromEntries(p.variables.map(v => [v.name, v.default])));
+  const [running, setRunning] = useState(false);
+  const [outputStarted, setOutputStarted] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+
+  // Detect variables in current prompt
+  const detectedVars = useMemo(() => {
+    const found = new Set();
+    for (const m of text.matchAll(/\{\{\s*([\w.-]+)\s*\}\}/g)) found.add(m[1]);
+    return Array.from(found);
+  }, [text]);
+
+  const mockResponse = `## Contexto de la llamada
+Llamada de seguimiento con **${vars.nombre_cliente || 'cliente'}** sobre la implementación del estándar MT-940. Participaron Helena Ruiz, Marc Oller (Latinia) y Javier Aguilar (BBVA).
+
+## Decisiones acordadas
+- Se validan los volúmenes del piloto: **4,2 M notificaciones** procesadas con latencia media de 780 ms (Helena Ruiz).
+- Latinia entregará un **documento técnico de mitigación** para la ventana nocturna esta misma semana (Marc Oller).
+- BBVA revisará internamente el **SLA con core banking** para acortar los 15 min de retraso (J. Aguilar).
+
+## Riesgos y bloqueos
+- Ventana 02:00–02:15 UTC con retraso de 6–9 min en los extractos MT-940 → afecta al **1,3% de las notificaciones push**.
+- El overhead de reintentos impactará el coste en **<2%**, pendiente de aprobar en comité.
+
+## Next actions
+- **Marc Oller** — Redactar propuesta técnica (reintento exponencial + fallback polling 90 s) — **viernes 22 abr**.
+- **Diego Soto** — Firmar y enviar documento de mitigación — **viernes 22 abr**.
+- **BBVA core banking** — Revisar SLA de extractos — **30 abr**.`;
+
+  const streamed = useStreamingText(mockResponse, outputStarted, 16);
+
+  const runTest = () => {
+    setRunning(true);
+    setOutputStarted(false);
+    setTimeout(() => { setOutputStarted(true); setRunning(false); }, 700);
+  };
+
+  const save = (msg = 'Guardado como borrador') => toast({ tone: 'success', icon: 'check', title: msg, sub: `${p.title} · v4` });
+  const requestApproval = () => toast({ tone: 'primary', icon: 'send', title: 'Solicitud de aprobación enviada', sub: 'Asignado a Diego Soto · Legal' });
+
+  return (
+    <div style={{ height: 'calc(100vh - 56px)', display: 'flex', flexDirection: 'column' }}>
+      {/* Sub-header */}
+      <div style={{ padding: '20px 40px', background: 'var(--surface_container_low)', display: 'flex', alignItems: 'center', gap: 16 }}>
+        <button className="icon-btn" onClick={onBack}><Icon name="chevron-l" /></button>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="hstack" style={{ gap: 8, marginBottom: 2 }}>
+            <span className="label-sm faint font-mono">{p.id}</span>
+            <StatusBadge status={p.status} />
+            <span className="label-sm muted">Editado hace 12 min por Marc Oller</span>
+          </div>
+          <div className="headline-md" style={{ marginTop: 2 }}>{p.title}</div>
+        </div>
+        <div className="hstack" style={{ gap: 8 }}>
+          <button className="btn btn-surface" onClick={() => setHistoryOpen(true)}>
+            <Icon name="version" size={16} /> Historial (v4 · +3 anteriores)
+          </button>
+          <button className="btn btn-surface" onClick={() => save('Guardado como borrador')}>
+            <Icon name="check" size={16} /> Guardar borrador
+          </button>
+          <button className="btn btn-secondary" onClick={requestApproval}>
+            <Icon name="send" size={16} /> Solicitar aprobación
+          </button>
+        </div>
+      </div>
+
+      {/* Split layout */}
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden' }}>
+        {/* LEFT — config + editor */}
+        <div style={{ overflow: 'auto', padding: '32px 40px', borderRight: 'none', background: 'var(--surface)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20, marginBottom: 32 }}>
+            <div className="field">
+              <label className="field-label">Título</label>
+              <input className="input" defaultValue={p.title} />
+            </div>
+            <div className="field">
+              <label className="field-label">Categoría</label>
+              <select className="select"><option>Llamadas / Reuniones</option><option>Compliance</option><option>Notificaciones</option></select>
+            </div>
+          </div>
+
+          <div className="field" style={{ marginBottom: 24 }}>
+            <label className="field-label">Descripción</label>
+            <textarea className="textarea" defaultValue={p.description} style={{ minHeight: 70 }} />
+          </div>
+
+          <div className="field" style={{ marginBottom: 32 }}>
+            <label className="field-label">Etiquetas</label>
+            <div className="hstack" style={{ gap: 6, flexWrap: 'wrap', padding: '10px 12px', background: 'var(--surface_container_high)', borderRadius: 'var(--r-md)' }}>
+              {p.tags.map(t => <span key={t} className="chip">#{t} <span className="x">×</span></span>)}
+              <input placeholder="Añadir etiqueta…" style={{ border: 'none', background: 'transparent', outline: 'none', font: 'inherit', color: 'inherit', flex: 1, minWidth: 80 }} />
+            </div>
+          </div>
+
+          <div className="hstack" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
+            <div>
+              <div className="label-sm muted">PLANTILLA</div>
+              <div className="headline-sm" style={{ marginTop: 4 }}>Instrucción al modelo</div>
+            </div>
+            <div className="hstack" style={{ gap: 8 }}>
+              <span className="chip font-mono"><Icon name="variable" size={12} /> {detectedVars.length} variables</span>
+              <button className="btn btn-ghost btn-sm"><Icon name="sparkle" size={14} /> Mejorar con IA</button>
+            </div>
+          </div>
+
+          {/* Editor — overlay highlight */}
+          <PromptEditor value={text} onChange={setText} />
+
+          <div className="hstack" style={{ gap: 12, marginTop: 12, color: 'var(--on_surface_variant)' }}>
+            <span className="label-sm faint font-mono">{text.length} caracteres</span>
+            <span className="label-sm faint font-mono">~{Math.round(text.length / 4)} tokens</span>
+            <span className="label-sm faint font-mono" style={{ marginLeft: 'auto' }}>Atajo ⌘ + Intro · Testear</span>
+          </div>
+        </div>
+
+        {/* RIGHT — Playground */}
+        <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--surface_container_low)', overflow: 'hidden' }}>
+          <div style={{ padding: '24px 32px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div className="label-sm muted">PLAYGROUND · TESTING EN VIVO</div>
+              <div className="headline-sm" style={{ marginTop: 4 }}>Respuesta del modelo</div>
+            </div>
+            <div className="hstack" style={{ gap: 8 }}>
+              <select className="select" style={{ width: 200, padding: '6px 10px', background: 'var(--surface_container_lowest)' }}>
+                <option>Claude 3.5 Sonnet</option>
+                <option>GPT-4o</option>
+                <option>Azure GPT-4 Turbo</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Variable panel */}
+          <div style={{ padding: '0 32px 16px', borderBottom: 'none' }}>
+            <div className="hstack" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
+              <span className="label-sm muted">INYECTAR VARIABLES</span>
+              <button className="btn btn-ghost btn-sm"><Icon name="refresh" size={14} /> Defaults</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              {p.variables.filter(v => v.type !== 'longtext').map(v => (
+                <div key={v.name} className="field">
+                  <label className="field-label"><span className="prompt-var" style={{ fontSize: '0.6875rem' }}>{`{{${v.name}}}`}</span></label>
+                  {v.type === 'select' ? (
+                    <select className="select" value={vars[v.name]} onChange={e => setVars({ ...vars, [v.name]: e.target.value })}>
+                      {v.options.map(o => <option key={o}>{o}</option>)}
+                    </select>
+                  ) : (
+                    <input className="input" type={v.type === 'number' ? 'number' : 'text'} value={vars[v.name]} onChange={e => setVars({ ...vars, [v.name]: e.target.value })} />
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="field" style={{ marginTop: 10 }}>
+              <label className="field-label"><span className="prompt-var" style={{ fontSize: '0.6875rem' }}>{`{{transcript_texto}}`}</span></label>
+              <div className="hstack" style={{ gap: 8, padding: '10px 12px', background: 'var(--surface_container_high)', borderRadius: 'var(--r-md)' }}>
+                <Icon name="file-audio" size={16} />
+                <span className="body-md">tr-8470 · Call BBVA — implementación MT-940</span>
+                <button className="btn btn-ghost btn-sm" style={{ marginLeft: 'auto' }}>Cambiar</button>
+              </div>
+            </div>
+          </div>
+
+          {/* Output */}
+          <div style={{ flex: 1, padding: '16px 32px 12px', overflow: 'auto', background: 'var(--surface_container_low)' }}>
+            {!outputStarted && !running && (
+              <div style={{ color: 'var(--outline)', fontFamily: 'JetBrains Mono', fontSize: 13, padding: 20, background: 'var(--surface_container)', borderRadius: 'var(--r-lg)', minHeight: 240 }}>
+                <div className="hstack" style={{ gap: 6, color: 'var(--primary_container)', marginBottom: 8 }}><Icon name="terminal" size={14}/> <span className="label-sm">vellum playground</span></div>
+                <span>$ waiting for input…</span><br/>
+                <span>$ press </span><kbd style={{ fontFamily: 'JetBrains Mono', padding: '1px 6px', background: 'var(--surface_container_high)', borderRadius: 3 }}>Testear</kbd><span> to run</span>
+              </div>
+            )}
+            {running && (
+              <div className="vstack" style={{ gap: 10, padding: 20 }}>
+                <div className="hstack" style={{ gap: 10, color: 'var(--primary_container)' }}><span className="spinner" /> <span className="label-md">Enviando a Claude 3.5 Sonnet…</span></div>
+                <div className="skeleton" style={{ height: 14, width: '80%' }} />
+                <div className="skeleton" style={{ height: 14, width: '62%' }} />
+                <div className="skeleton" style={{ height: 14, width: '72%' }} />
+                <div className="skeleton" style={{ height: 14, width: '45%' }} />
+              </div>
+            )}
+            {outputStarted && (
+              <div className="card-raised md-out" style={{ padding: 24, minHeight: 240 }}>
+                <div className="hstack" style={{ gap: 10, marginBottom: 16, color: 'var(--on_surface_variant)' }}>
+                  <Icon name="sparkle" size={14} style={{ color: 'var(--tertiary)' }} />
+                  <span className="label-sm muted">RESPUESTA · CLAUDE 3.5 SONNET · {(streamed.length / 4).toFixed(0)} TOKENS</span>
+                </div>
+                <div className="body-md" style={{ whiteSpace: 'pre-wrap' }}
+                     dangerouslySetInnerHTML={{
+                       __html: streamed
+                         .replace(/^## (.*)$/gm, '<h2>$1</h2>')
+                         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                         .replace(/^- (.*)$/gm, '<li>$1</li>')
+                         .replace(/(<li>.*<\/li>\n?)+/g, m => '<ul>' + m + '</ul>')
+                     }} />
+                <span className={streamed.length < mockResponse.length ? 'caret' : ''} />
+              </div>
+            )}
+          </div>
+
+          {/* Action bar */}
+          <div style={{ padding: '16px 32px 24px', background: 'var(--surface_container_lowest)', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div className="hstack" style={{ gap: 16, color: 'var(--on_surface_variant)' }}>
+              <span className="label-sm muted font-mono">↻ 1.8s</span>
+              <span className="label-sm muted font-mono">3,412 tokens</span>
+              <span className="label-sm muted font-mono">€0.0104</span>
+            </div>
+            <button className="btn btn-primary" style={{ marginLeft: 'auto' }} onClick={runTest} disabled={running}>
+              {running ? <><span className="spinner" style={{ borderTopColor: 'white' }} /> Ejecutando</> : <><Icon name="play" size={14} /> Testear</>}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* History drawer */}
+      <Drawer open={historyOpen} onClose={() => setHistoryOpen(false)} title={`Historial de versiones · ${p.title}`} wide
+              footer={<><button className="btn btn-surface" onClick={() => setHistoryOpen(false)}>Cerrar</button><button className="btn btn-primary">Restaurar v3</button></>}>
+        <VersionTimeline versions={p.versions} />
+      </Drawer>
+    </div>
+  );
+};
+
+// --- Prompt editor with variable pills overlay
+const PromptEditor = ({ value, onChange }) => {
+  const taRef = useRef();
+  const overlayRef = useRef();
+
+  const overlayHtml = useMemo(() => {
+    const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return esc(value).replace(/\{\{\s*([\w.-]+)\s*\}\}/g, '<span class="prompt-var"></body></span>').replace(/\n/g, '<br/>') + '<br/>';
+  }, [value]);
+
+  const sync = () => {
+    if (taRef.current && overlayRef.current) {
+      overlayRef.current.scrollTop = taRef.current.scrollTop;
+    }
+  };
+
+  return (
+    <div style={{ position: 'relative', background: 'var(--surface_container_lowest)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
+      <div ref={overlayRef} aria-hidden="true"
+           className="mono-block"
+           style={{
+             position: 'absolute', inset: 0,
+             padding: 20, margin: 0,
+             pointerEvents: 'none',
+             color: 'var(--on_surface)',
+             whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+             overflow: 'hidden',
+           }}
+           dangerouslySetInnerHTML={{ __html: overlayHtml }} />
+      <textarea
+        ref={taRef}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        onScroll={sync}
+        spellCheck={false}
+        style={{
+          width: '100%',
+          background: 'transparent',
+          color: 'transparent',
+          caretColor: 'var(--primary_container)',
+          border: 'none',
+          padding: 20,
+          fontFamily: 'JetBrains Mono, monospace',
+          fontSize: 13,
+          lineHeight: 1.65,
+          minHeight: 440,
+          outline: 'none',
+          resize: 'vertical',
+          position: 'relative',
+          whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+        }}
+      />
+    </div>
+  );
+};
+
+// --- Version timeline with diff
+const VersionTimeline = ({ versions }) => {
+  const [sel, setSel] = useState(0); // compare v[sel] vs v[sel+1]
+  const diffFrom = versions[sel + 1] || versions[sel];
+  const diffTo = versions[sel];
+  return (
+    <div>
+      <div className="label-sm muted" style={{ marginBottom: 12 }}>TIMELINE</div>
+      <div style={{ position: 'relative', marginBottom: 32 }}>
+        <div style={{ position: 'absolute', left: 11, top: 8, bottom: 8, width: 2, background: 'var(--surface_container_high)' }} />
+        {versions.map((v, i) => (
+          <div key={v.ver} className="hstack" style={{ gap: 16, padding: '10px 0', cursor: 'pointer' }} onClick={() => setSel(i)}>
+            <div style={{
+              width: 24, height: 24, borderRadius: 12,
+              background: i === sel ? 'var(--primary_container)' : 'var(--surface_container_lowest)',
+              border: '3px solid ' + (i === sel ? 'var(--surface_container_lowest)' : 'var(--surface_container_high)'),
+              boxShadow: i === sel ? '0 0 0 3px color-mix(in srgb, var(--primary_container) 30%, transparent)' : 'none',
+              flex: 'none', zIndex: 1,
+            }} />
+            <div style={{ flex: 1 }}>
+              <div className="hstack" style={{ gap: 10 }}>
+                <span className="title-md font-mono">{v.ver}</span>
+                <StatusBadge status={v.status} />
+                <span className="label-sm muted">por {v.author}</span>
+                <span className="label-sm muted" style={{ marginLeft: 'auto', fontFamily: 'JetBrains Mono' }}>{v.date}</span>
+              </div>
+              <div className="body-md muted" style={{ marginTop: 4 }}>{v.note}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="card" style={{ padding: 20 }}>
+        <div className="hstack" style={{ justifyContent: 'space-between', marginBottom: 16 }}>
+          <div className="label-sm muted">DIFF · {diffFrom.ver} → {diffTo.ver}</div>
+          <span className="label-sm muted font-mono">+2 líneas · −1 línea</span>
+        </div>
+        <pre className="mono-block" style={{ margin: 0 }}>
+<span className="muted">@@ plantilla @@</span>{'\n'}
+Produce un resumen ejecutivo en <span className="prompt-var">{'{{idioma}}'}</span> con esta estructura exacta:{'\n'}
+{'\n'}
+## Contexto de la llamada{'\n'}
+1-2 frases con el motivo y participantes.{'\n'}
+{'\n'}
+## Decisiones acordadas{'\n'}
+Bullet list. Cada decisión en una línea, con dueño entre paréntesis si se mencionó.{'\n'}
+{'\n'}
+<span className="diff-rem">## Riesgos, bloqueos y próximas acciones</span>{'\n'}
+<span className="diff-add">## Riesgos y bloqueos</span>{'\n'}
+<span className="diff-add">Bullet list. Sé específico — cita cifras, fechas y contrapartes.</span>{'\n'}
+{'\n'}
+<span className="diff-add">## Next actions</span>{'\n'}
+<span className="diff-add">Formato: "[Responsable] — Acción — Fecha compromiso".</span>
+        </pre>
+      </div>
+    </div>
+  );
+};
+
+window.ScreenPromptEditor = ScreenPromptEditor;
+
+
+// ====== screen_transcripts.jsx ======
+// Transcripts list + dropzone
+const ScreenTranscripts = ({ onOpen }) => {
+  const toast = useToast();
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [filter, setFilter] = useState('all');
+  const list = DATA.transcripts.filter(t => filter === 'all' || t.status === filter);
+
+  return (
+    <div className="page page-wide">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 64, alignItems: 'end', marginBottom: 48 }}>
+        <div>
+          <div className="label-sm faint" style={{ marginBottom: 12 }}>MEDIA LIBRARY</div>
+          <h1 className="display-md" style={{ margin: 0 }}>Transcripciones</h1>
+          <p className="body-lg muted" style={{ marginTop: 12, maxWidth: 560 }}>
+            Sube audios de llamadas y reuniones; el sistema transcribe de forma asíncrona y las convierte en contexto para tus prompts.
+          </p>
+        </div>
+        <button className="btn btn-primary btn-lg" onClick={() => setUploadOpen(true)}>
+          <Icon name="upload" size={16} /> Subir audio
+        </button>
+      </div>
+
+      {/* Summary stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
+        {[
+          { l: 'Activas', v: DATA.transcripts.length, sub: 'últimos 30 días' },
+          { l: 'En proceso', v: 2, sub: 'transcribiendo + subiendo' },
+          { l: 'Horas procesadas', v: '312h', sub: 'mes en curso' },
+          { l: 'Idiomas detectados', v: '4', sub: 'ES · EN · PT · FR' },
+        ].map((s, i) => (
+          <div key={i} className="card" style={{ padding: 20 }}>
+            <div className="label-sm muted">{s.l.toUpperCase()}</div>
+            <div className="headline-lg" style={{ marginTop: 8 }}>{s.v}</div>
+            <div className="label-sm muted" style={{ marginTop: 8 }}>{s.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="hstack" style={{ marginBottom: 20 }}>
+        <div className="tabs">
+          {[
+            { id: 'all',          label: 'Todas' },
+            { id: 'ok',           label: 'Completadas' },
+            { id: 'transcribing', label: 'Transcribiendo' },
+            { id: 'uploading',    label: 'Subiendo' },
+            { id: 'error',        label: 'Con errores' },
+          ].map(t => (
+            <button key={t.id} className={`tab ${filter === t.id ? 'active' : ''}`} onClick={() => setFilter(t.id)}>{t.label}</button>
+          ))}
+        </div>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div style={{ position: 'relative' }}>
+            <input className="input" placeholder="Buscar…" style={{ width: 260, paddingLeft: 36 }} />
+            <Icon name="search" size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--outline)' }} />
+          </div>
+          <button className="icon-btn"><Icon name="filter" /></button>
+        </div>
+      </div>
+
+      <div className="table-wrap">
+        <table className="v-table">
+          <thead>
+            <tr>
+              <th style={{ width: 28 }}></th>
+              <th>Reunión</th>
+              <th>Duración</th>
+              <th>Estado</th>
+              <th>Idioma</th>
+              <th>Tamaño</th>
+              <th>Fecha</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {list.map(t => (
+              <tr key={t.id} onClick={() => onOpen(t.id)}>
+                <td><Icon name={t.status === 'transcribing' || t.status === 'uploading' ? 'wave' : 'file-audio'} size={16}
+                      style={{ color: t.status === 'error' ? 'var(--error)' : t.status === 'transcribing' ? 'var(--primary_container)' : 'var(--outline)' }} /></td>
+                <td>
+                  <div className="title-md">{t.title}</div>
+                  <div className="hstack" style={{ gap: 6, marginTop: 4 }}>
+                    <span className="label-sm faint font-mono">{t.id}</span>
+                    {t.tags.map(g => <span key={g} className="chip" style={{ padding: '1px 8px' }}>#{g}</span>)}
+                  </div>
+                  {(t.status === 'transcribing' || t.status === 'uploading') && (
+                    <div className="progress" style={{ marginTop: 10, maxWidth: 360 }}>
+                      <div className="bar" style={{ width: `${t.progress}%`, background: 'var(--primary_container)' }} />
+                    </div>
+                  )}
+                </td>
+                <td className="font-mono">{t.dur}</td>
+                <td><StatusBadge status={t.status} /></td>
+                <td><span className="chip">{t.lang}</span></td>
+                <td className="muted font-mono">{t.size}</td>
+                <td className="muted">{t.date}</td>
+                <td style={{ textAlign: 'right' }}>
+                  <button className="icon-btn" onClick={(e) => e.stopPropagation()}><Icon name="more" /></button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <UploadModal open={uploadOpen} onClose={() => setUploadOpen(false)} onDone={() => {
+        setUploadOpen(false);
+        toast({ tone: 'primary', icon: 'wave', title: 'Transcripción iniciada', sub: 'Se notificará cuando esté lista · ~3 min' });
+      }} />
+    </div>
+  );
+};
+
+const UploadModal = ({ open, onClose, onDone }) => {
+  const [dragging, setDragging] = useState(false);
+  const [file, setFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const fakeUpload = () => {
+    setUploading(true);
+    setProgress(0);
+    let p = 0;
+    const id = setInterval(() => {
+      p += 8 + Math.random() * 12;
+      if (p >= 100) { p = 100; clearInterval(id); setTimeout(onDone, 400); }
+      setProgress(p);
+    }, 180);
+  };
+
+  return (
+    <Modal open={open} onClose={onClose} width={620}>
+      <div style={{ padding: '28px 32px', background: 'var(--surface_container_low)' }}>
+        <div className="label-sm muted">SUBIR MEDIA</div>
+        <div className="headline-md" style={{ marginTop: 4 }}>Nueva transcripción</div>
+      </div>
+      <div style={{ padding: 32 }}>
+        <div
+          onDragOver={e => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={e => { e.preventDefault(); setDragging(false); setFile({ name: 'call-bbva-mt940-19abr.mp3', size: 58 }); }}
+          onClick={() => setFile({ name: 'call-bbva-mt940-19abr.mp3', size: 58 })}
+          style={{
+            background: dragging ? 'color-mix(in srgb, var(--primary_container) 8%, var(--surface_container))' : 'var(--surface_container)',
+            borderRadius: 'var(--r-xl)',
+            padding: 40,
+            textAlign: 'center',
+            cursor: 'pointer',
+            transition: 'background 120ms',
+          }}
+        >
+          {!file ? (
+            <>
+              <div style={{ width: 56, height: 56, margin: '0 auto 16px', borderRadius: 28, background: 'var(--surface_container_lowest)', display: 'grid', placeItems: 'center' }}>
+                <Icon name="upload" size={22} style={{ color: 'var(--primary_container)' }} />
+              </div>
+              <div className="title-lg" style={{ marginBottom: 4 }}>Arrastra tu archivo aquí</div>
+              <div className="body-md muted">o haz clic para seleccionar · MP3, MP4, WAV, M4A · hasta 500 MB</div>
+            </>
+          ) : (
+            <div className="hstack" style={{ gap: 16, textAlign: 'left' }}>
+              <Icon name="file-audio" size={28} style={{ color: 'var(--primary_container)' }} />
+              <div style={{ flex: 1 }}>
+                <div className="title-md">{file.name}</div>
+                <div className="label-sm muted font-mono">{file.size} MB · audio/mpeg</div>
+                {uploading && (
+                  <div className="progress" style={{ marginTop: 10 }}>
+                    <div className="bar" style={{ width: `${progress}%`, background: 'var(--primary_container)' }} />
+                  </div>
+                )}
+              </div>
+              {!uploading && <button className="icon-btn" onClick={e => { e.stopPropagation(); setFile(null); }}><Icon name="x" /></button>}
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginTop: 24 }}>
+          <div className="field">
+            <label className="field-label">Título</label>
+            <input className="input" defaultValue="Call BBVA — implementación MT-940" />
+          </div>
+          <div className="field">
+            <label className="field-label">Idioma esperado</label>
+            <select className="select">
+              <option>Detección automática</option>
+              <option>Español</option><option>Inglés</option><option>Portugués</option>
+            </select>
+          </div>
+        </div>
+        <div className="field" style={{ marginTop: 16 }}>
+          <label className="field-label">Etiquetas</label>
+          <div className="hstack" style={{ gap: 6, flexWrap: 'wrap', padding: '10px 12px', background: 'var(--surface_container_high)', borderRadius: 'var(--r-md)' }}>
+            <span className="chip">#BBVA <span className="x">×</span></span>
+            <span className="chip">#cliente <span className="x">×</span></span>
+            <input placeholder="Añadir…" style={{ border: 'none', background: 'transparent', outline: 'none', font: 'inherit', color: 'inherit', flex: 1 }} />
+          </div>
+        </div>
+      </div>
+      <div style={{ padding: '16px 32px', background: 'var(--surface_container_low)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span className="label-sm muted">Coste estimado · <span className="font-mono">€0.14</span> · Whisper large-v3</span>
+        <div className="hstack" style={{ gap: 8 }}>
+          <button className="btn btn-surface" onClick={onClose}>Cancelar</button>
+          <button className="btn btn-primary" disabled={!file || uploading} onClick={fakeUpload}>
+            {uploading ? <><span className="spinner" style={{ borderTopColor: 'white' }} /> Subiendo {Math.round(progress)}%</> : <>Subir y transcribir <Icon name="arrow-r" size={14} /></>}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+window.ScreenTranscripts = ScreenTranscripts;
+
+
+// ====== screen_transcript_editor.jsx ======
+// Transcript editor — timestamped blocks + mini player
+const ScreenTranscriptEditor = ({ onBack, onRunPrompt }) => {
+  const toast = useToast();
+  const t = DATA.featuredTranscript;
+  const [playing, setPlaying] = useState(false);
+  const [time, setTime] = useState(132);
+  const [activeIdx, setActiveIdx] = useState(3);
+  const [editingIdx, setEditingIdx] = useState(null);
+  const [speed, setSpeed] = useState(1);
+  const [blocks, setBlocks] = useState(t.blocks);
+  const totalSec = 62 * 60 + 40;
+
+  useEffect(() => {
+    if (!playing) return;
+    const id = setInterval(() => setTime(x => Math.min(x + 1 * speed, totalSec)), 1000 / speed);
+    return () => clearInterval(id);
+  }, [playing, speed]);
+
+  const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+
+  return (
+    <div style={{ height: 'calc(100vh - 56px)', display: 'flex', flexDirection: 'column' }}>
+      {/* Sub-header */}
+      <div style={{ padding: '20px 40px', background: 'var(--surface_container_low)', display: 'flex', alignItems: 'center', gap: 16 }}>
+        <button className="icon-btn" onClick={onBack}><Icon name="chevron-l" /></button>
+        <div style={{ flex: 1 }}>
+          <div className="hstack" style={{ gap: 8 }}>
+            <span className="label-sm faint font-mono">{t.id}</span>
+            <StatusBadge status={t.status} />
+            <span className="label-sm muted">{t.meta.editor}</span>
+          </div>
+          <div className="headline-md" style={{ marginTop: 2 }}>{t.title}</div>
+        </div>
+        <div className="hstack" style={{ gap: 8 }}>
+          <button className="btn btn-surface"><Icon name="download" size={16} /> Descargar PDF</button>
+          <button className="btn btn-surface"><Icon name="version" size={16} /> Guardar versión</button>
+          <button className="btn btn-primary" onClick={onRunPrompt}><Icon name="play" size={16} /> Aplicar Prompt</button>
+        </div>
+      </div>
+
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 380px', overflow: 'hidden' }}>
+        {/* Main transcript */}
+        <div style={{ overflow: 'auto', padding: '40px 80px 200px', background: 'var(--surface)' }}>
+          <div style={{ maxWidth: 760, margin: '0 auto' }}>
+            <div className="hstack" style={{ gap: 6, flexWrap: 'wrap', marginBottom: 24 }}>
+              {t.tags.map(g => <span key={g} className="chip">#{g}</span>)}
+              <span className="chip"><Icon name="clock" size={12} /> {t.dur}</span>
+              <span className="chip"><Icon name="user" size={12} /> {t.meta.participantes} participantes</span>
+              <span className="chip">{t.lang}</span>
+            </div>
+
+            <div className="vstack" style={{ gap: 24 }}>
+              {blocks.map((b, i) => {
+                const isActive = i === activeIdx;
+                return (
+                  <div key={i}
+                       onClick={() => setActiveIdx(i)}
+                       style={{
+                         display: 'grid', gridTemplateColumns: '64px 1fr', gap: 20,
+                         padding: 16,
+                         borderRadius: 'var(--r-lg)',
+                         background: isActive ? 'var(--surface_container_low)' : 'transparent',
+                         cursor: 'pointer',
+                         transition: 'background 120ms',
+                       }}>
+                    <div>
+                      <div className="label-sm muted font-mono">{b.t}</div>
+                    </div>
+                    <div>
+                      <div className="label-md" style={{ color: 'var(--primary_container)', fontWeight: 600, marginBottom: 6 }}>{b.speaker}</div>
+                      {editingIdx === i ? (
+                        <textarea
+                          className="textarea"
+                          defaultValue={b.text}
+                          autoFocus
+                          onBlur={(e) => { const next = [...blocks]; next[i] = { ...b, text: e.target.value }; setBlocks(next); setEditingIdx(null); toast({ tone: 'success', icon: 'check', title: 'Corrección guardada', sub: `Bloque @${b.t}` }); }}
+                          style={{ fontSize: '1rem', fontFamily: 'Inter', minHeight: 70 }}
+                        />
+                      ) : (
+                        <div className="body-lg" onDoubleClick={() => setEditingIdx(i)}>
+                          {b.text}
+                        </div>
+                      )}
+                      {isActive && editingIdx !== i && (
+                        <div className="hstack" style={{ gap: 8, marginTop: 10 }}>
+                          <button className="btn btn-ghost btn-sm" onClick={() => setEditingIdx(i)}><Icon name="edit" size={12} /> Corregir</button>
+                          <button className="btn btn-ghost btn-sm"><Icon name="tag" size={12} /> Anotar</button>
+                          <button className="btn btn-ghost btn-sm"><Icon name="copy" size={12} /> Citar</button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Sidebar — insights */}
+        <aside style={{ background: 'var(--surface_container_low)', overflow: 'auto', padding: 24 }}>
+          <div className="label-sm muted" style={{ marginBottom: 8 }}>ANÁLISIS AUTOMÁTICO</div>
+          <div className="headline-sm" style={{ marginBottom: 16 }}>Entidades detectadas</div>
+          <div className="vstack" style={{ gap: 8, marginBottom: 24 }}>
+            {[
+              { l: 'BBVA', k: 'Cliente' },
+              { l: 'MT-940', k: 'Estándar' },
+              { l: 'Helena Ruiz', k: 'Persona' },
+              { l: 'Javier Aguilar', k: 'Persona · externa' },
+              { l: 'Marc Oller', k: 'Persona' },
+              { l: '4,2 M notificaciones', k: 'Métrica' },
+              { l: '780 ms', k: 'Métrica · latencia' },
+              { l: 'viernes', k: 'Fecha compromiso' },
+            ].map((e, i) => (
+              <div key={i} className="hstack" style={{ padding: '8px 10px', background: 'var(--surface_container_lowest)', borderRadius: 'var(--r-md)' }}>
+                <div>
+                  <div className="body-md" style={{ fontWeight: 500 }}>{e.l}</div>
+                  <div className="label-sm muted">{e.k}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="label-sm muted" style={{ marginBottom: 8 }}>PROMPTS SUGERIDOS</div>
+          <div className="vstack" style={{ gap: 8 }}>
+            {['pr-0214 · Resumen ejecutivo', 'pr-0206 · Extracción de acuerdos', 'pr-0210 · Análisis de sentiment'].map(pr => (
+              <button key={pr} className="hstack" onClick={onRunPrompt}
+                style={{ padding: '12px', background: 'var(--surface_container_lowest)', borderRadius: 'var(--r-md)', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%' }}>
+                <Icon name="sparkle" size={14} style={{ color: 'var(--tertiary)' }} />
+                <span className="body-md">{pr}</span>
+                <Icon name="chevron-r" size={14} style={{ marginLeft: 'auto', color: 'var(--outline)' }} />
+              </button>
+            ))}
+          </div>
+        </aside>
+      </div>
+
+      {/* Floating media dock */}
+      <div style={{
+        position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+        width: 760, maxWidth: '92%',
+        background: 'rgba(255, 255, 255, 0.82)', backdropFilter: 'blur(20px)',
+        borderRadius: 14, padding: '14px 20px',
+        boxShadow: '0 20px 40px rgba(2,48,57,0.12)',
+        display: 'flex', alignItems: 'center', gap: 16,
+      }}>
+        <button className="icon-btn" style={{ background: 'var(--primary_container)', color: 'white' }} onClick={() => setPlaying(p => !p)}>
+          {playing ? <Icon name="x" /> : <Icon name="play" />}
+        </button>
+        <span className="label-sm font-mono muted">{fmt(time)}</span>
+        <div style={{ flex: 1, position: 'relative', height: 28, display: 'flex', alignItems: 'center', gap: 2 }}>
+          {Array.from({ length: 80 }).map((_, i) => {
+            const pos = i / 80;
+            const h = 6 + Math.abs(Math.sin(i * 0.7 + Math.cos(i * 0.3))) * 18;
+            return <div key={i} style={{ flex: 1, height: h, background: pos < time / totalSec ? 'var(--primary_container)' : 'var(--outline_variant)', borderRadius: 1 }} />;
+          })}
+        </div>
+        <span className="label-sm font-mono muted">{fmt(totalSec)}</span>
+        <button className="btn btn-surface btn-sm" onClick={() => setSpeed(s => s === 1 ? 1.5 : s === 1.5 ? 2 : 1)}>{speed}×</button>
+      </div>
+    </div>
+  );
+};
+
+window.ScreenTranscriptEditor = ScreenTranscriptEditor;
+
+
+// ====== screen_playground.jsx ======
+// Playground — cross Prompt × Transcript → Output → Connector
+const ScreenPlayground = () => {
+  const toast = useToast();
+  const [promptId, setPromptId] = useState('pr-0214');
+  const [inputMode, setInputMode] = useState('transcript');
+  const [transcriptId, setTranscriptId] = useState('tr-8470');
+  const [freeText, setFreeText] = useState('');
+  const [vars, setVars] = useState({ unidad_negocio: 'Banking Notifications', nombre_cliente: 'BBVA España', idioma: 'español', tono_respuesta: 'ejecutivo', max_palabras: 350 });
+  const [running, setRunning] = useState(false);
+  const [started, setStarted] = useState(false);
+  const [model, setModel] = useState('Claude 3.5 Sonnet');
+  const [connectorOpen, setConnectorOpen] = useState(false);
+
+  const selectedPrompt = DATA.prompts.find(p => p.id === promptId) || DATA.prompts[0];
+  const selectedTranscript = DATA.transcripts.find(t => t.id === transcriptId);
+
+  const mockOutput = `## Contexto de la llamada
+Reunión de seguimiento con ${vars.nombre_cliente} sobre la implementación del estándar MT-940 para notificaciones bancarias. Participan Helena Ruiz, Marc Oller (Latinia) y Javier Aguilar (BBVA).
+
+## Decisiones acordadas
+- Validación del piloto: 4,2 M notificaciones procesadas con latencia media 780 ms (Helena Ruiz).
+- Latinia entregará un documento técnico de mitigación para la ventana nocturna 02:00-02:15 UTC (Marc Oller).
+- BBVA revisará el SLA con core banking para acortar los 15 min de retraso (Javier Aguilar).
+
+## Riesgos y bloqueos
+- Ventana 02:00-02:15 UTC con retraso de 6-9 min en extractos MT-940 → afecta al 1,3% de las notificaciones push.
+- Overhead de reintentos impacta el coste en <2%, pendiente aprobación en comité.
+
+## Next actions
+- Marc Oller — Redactar propuesta técnica (reintento + fallback polling) — viernes 22 abr.
+- Diego Soto — Firmar documento de mitigación — viernes 22 abr.
+- BBVA core — Revisar SLA de extractos — 30 abr.`;
+
+  const streamed = useStreamingText(mockOutput, started, 18);
+
+  const run = () => {
+    setRunning(true); setStarted(false);
+    setTimeout(() => { setStarted(true); setRunning(false); }, 700);
+  };
+
+  return (
+    <div className="page page-wide">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 32, alignItems: 'end', marginBottom: 40 }}>
+        <div>
+          <div className="label-sm faint" style={{ marginBottom: 12 }}>ÁREA DE EJECUCIÓN</div>
+          <h1 className="display-md" style={{ margin: 0 }}>Playground</h1>
+          <p className="body-lg muted" style={{ marginTop: 12, maxWidth: 620 }}>
+            Ejecuta un prompt aprobado sobre texto libre o una transcripción. Cada ejecución queda registrada en auditoría.
+          </p>
+        </div>
+        <button className="btn btn-surface"><Icon name="history" size={16} /> Últimas ejecuciones</button>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: 20 }}>
+        {/* LEFT — builder */}
+        <div className="vstack" style={{ gap: 16 }}>
+          {/* Step 1 */}
+          <div className="card-raised">
+            <StepHeader n="1" title="Selecciona un Prompt aprobado" />
+            <PromptPicker value={promptId} onChange={setPromptId} />
+            {selectedPrompt && (
+              <div style={{ marginTop: 16, padding: 16, background: 'var(--surface_container_low)', borderRadius: 'var(--r-md)' }}>
+                <div className="hstack" style={{ justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span className="title-md">{selectedPrompt.title}</span>
+                  <StatusBadge status={selectedPrompt.status} />
+                </div>
+                <div className="body-sm muted">{selectedPrompt.id} · {selectedPrompt.ver} · {selectedPrompt.owner}</div>
+              </div>
+            )}
+          </div>
+
+          {/* Step 2 */}
+          <div className="card-raised">
+            <StepHeader n="2" title="Input de contexto" />
+            <div className="hstack" style={{ gap: 8, marginBottom: 16 }}>
+              <RadioCard checked={inputMode === 'transcript'} onSelect={() => setInputMode('transcript')} icon="wave" title="Transcripción existente" sub="Reúne audio + texto" />
+              <RadioCard checked={inputMode === 'free'}       onSelect={() => setInputMode('free')}       icon="edit" title="Texto libre"              sub="Pega un bloque de texto" />
+            </div>
+
+            {inputMode === 'transcript' ? (
+              <div className="field">
+                <label className="field-label">Transcripción</label>
+                <select className="select" value={transcriptId} onChange={e => setTranscriptId(e.target.value)}>
+                  {DATA.transcripts.filter(t => t.status === 'ok').map(t => (
+                    <option key={t.id} value={t.id}>{t.title} · {t.dur}</option>
+                  ))}
+                </select>
+                {selectedTranscript && (
+                  <div style={{ marginTop: 10, padding: 12, background: 'var(--surface_container_low)', borderRadius: 'var(--r-md)', display: 'flex', gap: 10, alignItems: 'center' }}>
+                    <Icon name="file-audio" size={18} />
+                    <div style={{ flex: 1 }}>
+                      <div className="title-md">{selectedTranscript.title}</div>
+                      <div className="label-sm muted font-mono">{selectedTranscript.id} · {selectedTranscript.dur} · {selectedTranscript.lang}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="field">
+                <label className="field-label">Texto libre</label>
+                <textarea className="textarea" placeholder="Pega aquí el texto que servirá como contexto…" value={freeText} onChange={e => setFreeText(e.target.value)} />
+              </div>
+            )}
+          </div>
+
+          {/* Step 3 */}
+          <div className="card-raised">
+            <StepHeader n="3" title="Inyecta variables" />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              {Object.entries(vars).map(([k, v]) => (
+                <div className="field" key={k}>
+                  <label className="field-label"><span className="prompt-var" style={{ fontSize: '0.6875rem' }}>{`{{${k}}}`}</span></label>
+                  <input className="input" value={v} onChange={e => setVars({ ...vars, [k]: e.target.value })} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Step 4 */}
+          <div className="card-raised">
+            <StepHeader n="4" title="Motor" />
+            <div className="hstack" style={{ gap: 8 }}>
+              {['Claude 3.5 Sonnet', 'GPT-4o', 'Azure GPT-4 Turbo'].map(m => (
+                <button key={m} className="btn" style={{
+                  background: model === m ? 'var(--primary_container)' : 'var(--surface_container_high)',
+                  color: model === m ? 'white' : 'var(--on_surface)',
+                }} onClick={() => setModel(m)}>{m}</button>
+              ))}
+            </div>
+            <div className="hstack" style={{ gap: 20, marginTop: 16, color: 'var(--on_surface_variant)' }}>
+              <div className="field" style={{ flex: 1 }}>
+                <label className="field-label">Temperatura · 0.3</label>
+                <input type="range" min="0" max="100" defaultValue="30" style={{ width: '100%' }} />
+              </div>
+              <div className="field" style={{ flex: 1 }}>
+                <label className="field-label">Max tokens</label>
+                <input className="input" defaultValue="1500" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT — output terminal */}
+        <div style={{ position: 'sticky', top: 72, alignSelf: 'start', maxHeight: 'calc(100vh - 100px)', display: 'flex', flexDirection: 'column' }}>
+          <div className="gradient-hero" style={{ padding: 24, borderRadius: 'var(--r-xl) var(--r-xl) 0 0' }}>
+            <div className="hstack" style={{ justifyContent: 'space-between' }}>
+              <div>
+                <div className="label-sm" style={{ color: 'rgba(255,255,255,0.6)', marginBottom: 4 }}>EJECUCIÓN</div>
+                <div className="headline-sm" style={{ color: 'white' }}>{selectedPrompt?.title}</div>
+              </div>
+              <div className="hstack" style={{ gap: 8, color: 'rgba(255,255,255,0.72)', fontFamily: 'JetBrains Mono', fontSize: 12 }}>
+                <Icon name="terminal" size={14} /> <span>vellum/playground</span>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ background: 'var(--surface_container_lowest)', padding: 28, flex: 1, overflow: 'auto', borderRadius: '0 0 var(--r-xl) var(--r-xl)', minHeight: 400 }}>
+            {!started && !running && (
+              <div style={{ color: 'var(--outline)', fontFamily: 'JetBrains Mono', fontSize: 13, padding: 16 }}>
+                <span>$ vellum run {promptId} --model "{model}"</span><br/>
+                <span>$ --input transcript:{transcriptId}</span><br/>
+                <span>$ awaiting execution…</span>
+              </div>
+            )}
+            {running && (
+              <div className="vstack" style={{ gap: 12 }}>
+                <div className="hstack" style={{ gap: 10, color: 'var(--primary_container)' }}><span className="spinner" /> <span className="label-md">Enviando a {model}…</span></div>
+                {['Validando permisos', 'Resolviendo versión del prompt', 'Inyectando variables', 'Abriendo stream al modelo'].map((s, i) => (
+                  <div key={i} className="hstack" style={{ gap: 10, color: 'var(--on_surface_variant)' }}>
+                    <Icon name="check" size={14} style={{ color: 'var(--success)' }} /> <span className="label-md">{s}</span>
+                  </div>
+                ))}
+                <div className="skeleton" style={{ height: 14, width: '78%' }} />
+                <div className="skeleton" style={{ height: 14, width: '62%' }} />
+              </div>
+            )}
+            {started && (
+              <div className="md-out body-md"
+                   dangerouslySetInnerHTML={{
+                     __html: streamed
+                       .replace(/^## (.*)$/gm, '<h2>$1</h2>')
+                       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                       .replace(/^- (.*)$/gm, '<li>$1</li>')
+                       .replace(/(<li>.*<\/li>\n?)+/g, m => '<ul>' + m + '</ul>') + (streamed.length < mockOutput.length ? '▍' : '')
+                   }}
+              />
+            )}
+          </div>
+
+          {/* Action bar */}
+          <div className="hstack" style={{ marginTop: 16, gap: 10 }}>
+            {started && (
+              <>
+                <span className="label-sm muted font-mono">3.412 tokens · €0.0104 · 2.3s</span>
+                <button className="btn btn-surface" style={{ marginLeft: 'auto' }}><Icon name="copy" size={14}/> Copiar</button>
+                <button className="btn btn-secondary" onClick={() => setConnectorOpen(true)}><Icon name="send" size={14}/> Enviar a conector</button>
+              </>
+            )}
+            {!started && (
+              <button className="btn btn-primary btn-lg" style={{ marginLeft: 'auto' }} onClick={run} disabled={running}>
+                {running ? <><span className="spinner" style={{ borderTopColor: 'white' }} /> Ejecutando</> : <><Icon name="play" size={16} /> Ejecutar prompt</>}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <Modal open={connectorOpen} onClose={() => setConnectorOpen(false)} width={560}>
+        <div style={{ padding: 32 }}>
+          <div className="label-sm muted">EXPORTAR</div>
+          <div className="headline-md" style={{ marginTop: 4, marginBottom: 20 }}>Enviar resultado a conector</div>
+          <div className="vstack" style={{ gap: 10 }}>
+            {DATA.connectors.filter(c => c.enabled).map(c => (
+              <button key={c.id} onClick={() => { setConnectorOpen(false); toast({ tone: 'success', icon: 'send', title: `Enviado a ${c.name}`, sub: c.scope }); }}
+                className="hstack" style={{ padding: 14, background: 'var(--surface_container_low)', borderRadius: 'var(--r-md)', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%' }}>
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--surface_container_lowest)', display: 'grid', placeItems: 'center' }}>
+                  <Icon name="link" size={18} style={{ color: 'var(--primary_container)' }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div className="title-md">{c.name}</div>
+                  <div className="label-sm muted">{c.scope}</div>
+                </div>
+                <Icon name="chevron-r" size={16} style={{ color: 'var(--outline)' }} />
+              </button>
+            ))}
+          </div>
+        </div>
+      </Modal>
+    </div>
+  );
+};
+
+const StepHeader = ({ n, title }) => (
+  <div className="hstack" style={{ gap: 12, marginBottom: 16 }}>
+    <div style={{ width: 26, height: 26, borderRadius: 6, background: 'var(--primary_container)', color: 'white', display: 'grid', placeItems: 'center', fontFamily: 'JetBrains Mono', fontWeight: 600, fontSize: 12 }}>{n}</div>
+    <div className="title-lg">{title}</div>
+  </div>
+);
+
+const PromptPicker = ({ value, onChange }) => {
+  const [open, setOpen] = useState(false);
+  const approved = DATA.prompts.filter(p => p.status === 'approved');
+  const sel = DATA.prompts.find(p => p.id === value);
+  return (
+    <div style={{ position: 'relative' }}>
+      <button onClick={() => setOpen(!open)} className="hstack"
+        style={{ width: '100%', padding: '12px 14px', background: 'var(--surface_container_high)', borderRadius: 'var(--r-md)', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}>
+        <Icon name="prompts" size={16} style={{ color: 'var(--primary_container)' }} />
+        <div style={{ flex: 1 }}>
+          <div className="title-md">{sel?.title || 'Seleccionar…'}</div>
+          <div className="label-sm muted font-mono">{sel?.id} · {sel?.ver}</div>
+        </div>
+        <Icon name="chevron-d" size={14} style={{ color: 'var(--outline)' }} />
+      </button>
+      {open && (
+        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, background: 'var(--surface_container_lowest)', borderRadius: 'var(--r-md)', boxShadow: 'var(--shadow-md)', zIndex: 5, maxHeight: 340, overflow: 'auto', padding: 6 }}>
+          {approved.map(p => (
+            <div key={p.id} onClick={() => { onChange(p.id); setOpen(false); }}
+              className="hstack" style={{ padding: '10px 12px', borderRadius: 'var(--r-md)', cursor: 'pointer' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--surface_container_low)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+              <div style={{ flex: 1 }}>
+                <div className="title-md">{p.title}</div>
+                <div className="label-sm muted font-mono">{p.id} · {p.ver}</div>
+              </div>
+              <StatusBadge status={p.status} />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const RadioCard = ({ checked, onSelect, icon, title, sub }) => (
+  <div onClick={onSelect} className="hstack" style={{
+    flex: 1, padding: 14, borderRadius: 'var(--r-md)', cursor: 'pointer',
+    background: checked ? 'color-mix(in srgb, var(--primary_container) 8%, var(--surface_container_low))' : 'var(--surface_container_low)',
+    outline: checked ? '2px solid var(--primary_container)' : 'none',
+    outlineOffset: -2,
+  }}>
+    <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--surface_container_lowest)', display: 'grid', placeItems: 'center' }}>
+      <Icon name={icon} size={16} style={{ color: checked ? 'var(--primary_container)' : 'var(--outline)' }} />
+    </div>
+    <div>
+      <div className="title-md">{title}</div>
+      <div className="label-sm muted">{sub}</div>
+    </div>
+  </div>
+);
+
+window.ScreenPlayground = ScreenPlayground;
+
+
+// ====== screen_connectors.jsx ======
+// Connectors — grid + config drawer
+const ScreenConnectors = () => {
+  const toast = useToast();
+  const [conns, setConns] = useState(DATA.connectors);
+  const [drawer, setDrawer] = useState(null);
+
+  const toggle = (id) => setConns(list => list.map(c => c.id === id ? { ...c, enabled: !c.enabled } : c));
+
+  return (
+    <div className="page page-wide">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 32, alignItems: 'end', marginBottom: 48 }}>
+        <div>
+          <div className="label-sm faint" style={{ marginBottom: 12 }}>INTEGRACIÓN</div>
+          <h1 className="display-md" style={{ margin: 0 }}>Conectores</h1>
+          <p className="body-lg muted" style={{ marginTop: 12, maxWidth: 620 }}>
+            Activa los destinos a los que tus ejecuciones pueden enviar resultados. Todo se firma con HMAC y queda trazado.
+          </p>
+        </div>
+        <button className="btn btn-primary"><Icon name="plus" size={16} /> Añadir conector</button>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
+        {conns.map(c => (
+          <div key={c.id} className="card-raised" style={{ padding: 24 }}>
+            <div className="hstack" style={{ justifyContent: 'space-between', marginBottom: 16 }}>
+              <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--surface_container_low)', display: 'grid', placeItems: 'center' }}>
+                <Icon name={c.id === 'slack' ? 'send' : c.id === 'webhook' ? 'code' : c.id === 'email' ? 'send' : 'link'} size={22} style={{ color: 'var(--primary_container)' }} />
+              </div>
+              <Toggle value={c.enabled} onChange={() => { toggle(c.id); toast({ tone: 'primary', icon: c.enabled ? 'x' : 'check', title: `${c.name} ${c.enabled ? 'desactivado' : 'activado'}`, sub: c.scope }); }} />
+            </div>
+            <div className="headline-sm" style={{ marginBottom: 6 }}>{c.name}</div>
+            <div className="body-md muted" style={{ marginBottom: 16, minHeight: 42 }}>{c.desc}</div>
+            <div className="hstack" style={{ gap: 8, marginBottom: 16 }}>
+              {c.enabled ? <StatusBadge status={c.status} /> : <StatusBadge status="off" />}
+              <span className="label-sm muted">{c.scope}</span>
+            </div>
+            <div className="hstack" style={{ justifyContent: 'space-between', borderTop: 'none', paddingTop: 12 }}>
+              <span className="label-sm faint">Último uso: {c.lastUsed}</span>
+              <button className="btn btn-ghost btn-sm" onClick={() => setDrawer(c)}>Configurar <Icon name="chevron-r" size={14} /></button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <Drawer open={!!drawer} onClose={() => setDrawer(null)} title={drawer ? `Configurar · ${drawer.name}` : ''}
+        footer={<>
+          <button className="btn btn-surface" onClick={() => setDrawer(null)}>Cancelar</button>
+          <button className="btn btn-primary" onClick={() => { setDrawer(null); toast({ tone: 'success', icon: 'check-circle', title: 'Configuración guardada', sub: drawer?.name }); }}>Guardar</button>
+        </>}>
+        {drawer && <ConnectorForm conn={drawer} />}
+      </Drawer>
+    </div>
+  );
+};
+
+const ConnectorForm = ({ conn }) => {
+  const [test, setTest] = useState(null);
+  const doTest = () => {
+    setTest('testing');
+    setTimeout(() => setTest('ok'), 1100);
+  };
+  return (
+    <div className="vstack" style={{ gap: 20 }}>
+      <div className="field">
+        <label className="field-label">Nombre del destino</label>
+        <input className="input" defaultValue={conn.name} />
+      </div>
+      <div className="field">
+        <label className="field-label">URL del servicio</label>
+        <input className="input" defaultValue={conn.id === 'webhook' ? 'https://api.latinia.internal/webhooks/ai' : `https://${conn.id}.latinia.com/api/v1`} />
+      </div>
+      <div className="field">
+        <label className="field-label">Espacio / Canal / Proyecto</label>
+        <input className="input" defaultValue={conn.scope} />
+      </div>
+      <div className="field">
+        <label className="field-label">Token / API Key</label>
+        <div style={{ position: 'relative' }}>
+          <input className="input" type="password" defaultValue="sk_live_9f42a12c8e7d1bbbbbbbbb" style={{ paddingRight: 80 }} />
+          <button className="btn btn-ghost btn-sm" style={{ position: 'absolute', right: 8, top: 8 }}><Icon name="eye" size={14} /> Ver</button>
+        </div>
+        <span className="label-sm faint">Se cifra con AES-256 antes de persistirse. Nunca viaja en respuestas de API.</span>
+      </div>
+      <div className="field">
+        <label className="field-label">Firmado HMAC</label>
+        <div className="hstack" style={{ gap: 12 }}>
+          <Toggle value={true} />
+          <span className="body-md">Firma cada payload con <code style={{ fontFamily: 'JetBrains Mono' }}>X-Vellum-Signature</code></span>
+        </div>
+      </div>
+
+      <div className="card" style={{ background: 'var(--surface_container_low)', padding: 16 }}>
+        <div className="hstack" style={{ justifyContent: 'space-between' }}>
+          <div>
+            <div className="title-md">Verificar conexión</div>
+            <div className="label-sm muted">Envía un ping al endpoint antes de guardar.</div>
+          </div>
+          <button className="btn btn-surface" onClick={doTest} disabled={test === 'testing'}>
+            {test === 'testing' ? <><span className="spinner"/> Probando…</> : test === 'ok' ? <><Icon name="check" size={14} style={{ color: 'var(--success)'}}/> OK · 124 ms</> : <>Test connection</>}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Toggle = ({ value, onChange }) => (
+  <button onClick={onChange} style={{
+    width: 40, height: 24, borderRadius: 999, position: 'relative',
+    background: value ? 'var(--primary_container)' : 'var(--surface_container_highest)',
+    border: 'none', cursor: 'pointer', transition: 'background 140ms',
+  }}>
+    <span style={{
+      position: 'absolute', top: 3, left: value ? 19 : 3,
+      width: 18, height: 18, borderRadius: 9, background: 'white',
+      transition: 'left 140ms',
+    }} />
+  </button>
+);
+
+window.ScreenConnectors = ScreenConnectors;
+window.Toggle = Toggle;
+
+
+// ====== screen_history.jsx ======
+// Execution history / audit log
+const ScreenHistory = () => {
+  const [selected, setSelected] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const rows = DATA.executions.filter(r => statusFilter === 'all' || r.status === statusFilter);
+
+  return (
+    <div className="page page-wide">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 32, alignItems: 'end', marginBottom: 40 }}>
+        <div>
+          <div className="label-sm faint" style={{ marginBottom: 12 }}>AUDITORÍA GENERAL</div>
+          <h1 className="display-md" style={{ margin: 0 }}>Historial de ejecuciones</h1>
+          <p className="body-lg muted" style={{ marginTop: 12, maxWidth: 620 }}>
+            Cada llamada al modelo queda registrada con usuario, prompt, input, output, coste y latencia. Retención 365 días.
+          </p>
+        </div>
+        <div className="hstack" style={{ gap: 8 }}>
+          <button className="btn btn-surface"><Icon name="download" size={16} /> Exportar CSV</button>
+          <button className="btn btn-surface"><Icon name="code" size={16} /> Consultar vía API</button>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 24 }}>
+        {[
+          { l: 'Ejecuciones hoy', v: '1,284' },
+          { l: 'Success rate', v: '98.3%', tone: 'var(--success)' },
+          { l: 'Latencia P50', v: '1.4s' },
+          { l: 'Latencia P95', v: '3.1s' },
+          { l: 'Coste hoy', v: '€42.18' },
+        ].map((s, i) => (
+          <div key={i} className="card" style={{ padding: 16 }}>
+            <div className="label-sm muted">{s.l}</div>
+            <div className="headline-md" style={{ marginTop: 4, color: s.tone || 'var(--on_surface)' }}>{s.v}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="hstack" style={{ marginBottom: 16 }}>
+        <div className="tabs">
+          {[{id:'all',label:'Todas'},{id:'success',label:'Success'},{id:'failed',label:'Failed'}].map(t => (
+            <button key={t.id} className={`tab ${statusFilter === t.id ? 'active' : ''}`} onClick={() => setStatusFilter(t.id)}>{t.label}</button>
+          ))}
+        </div>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          <div style={{ position: 'relative' }}>
+            <input className="input" placeholder="ID, usuario, prompt…" style={{ width: 260, paddingLeft: 36 }} />
+            <Icon name="search" size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--outline)' }} />
+          </div>
+          <button className="icon-btn"><Icon name="filter" /></button>
+        </div>
+      </div>
+
+      <div className="table-wrap">
+        <table className="v-table">
+          <thead>
+            <tr>
+              <th>ID Ejecución</th>
+              <th>Timestamp</th>
+              <th>Usuario</th>
+              <th>Prompt</th>
+              <th>Input</th>
+              <th>Modelo</th>
+              <th style={{ textAlign: 'right' }}>Tokens</th>
+              <th style={{ textAlign: 'right' }}>Coste</th>
+              <th style={{ textAlign: 'right' }}>Latencia</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(r => (
+              <tr key={r.id} onClick={() => setSelected(r)}>
+                <td className="font-mono" style={{ color: 'var(--primary_container)', fontWeight: 600 }}>{r.id}</td>
+                <td className="font-mono muted">{r.at}</td>
+                <td>{r.user}</td>
+                <td className="font-mono" style={{ fontSize: '0.8125rem' }}>{r.prompt}</td>
+                <td className="font-mono muted" style={{ fontSize: '0.8125rem' }}>{r.transcript}</td>
+                <td>{r.model}</td>
+                <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono' }}>{r.tokens.toLocaleString()}</td>
+                <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono' }}>€{r.cost.toFixed(4)}</td>
+                <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono' }}>{r.latency}ms</td>
+                <td><StatusBadge status={r.status} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <Drawer open={!!selected} onClose={() => setSelected(null)} title={selected ? `Ejecución · ${selected.id}` : ''} wide
+        footer={<><button className="btn btn-surface" onClick={() => setSelected(null)}>Cerrar</button><button className="btn btn-primary"><Icon name="refresh" size={14}/> Re-ejecutar</button></>}>
+        {selected && <ExecutionDetail r={selected} />}
+      </Drawer>
+    </div>
+  );
+};
+
+const ExecutionDetail = ({ r }) => {
+  const request = {
+    model: r.model,
+    temperature: 0.3,
+    max_tokens: 1500,
+    messages: [
+      { role: 'system', content: '(plantilla resuelta — resumen ejecutivo…)' },
+      { role: 'user', content: '--- TRANSCRIPCIÓN ---\n(...tr-8470 truncated...)\n--- FIN ---' },
+    ],
+    metadata: { prompt_id: r.prompt, user: r.user, source: 'playground' },
+  };
+  return (
+    <div className="vstack" style={{ gap: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+        {[
+          { l: 'Status', v: <StatusBadge status={r.status} /> },
+          { l: 'Latencia', v: `${r.latency} ms` },
+          { l: 'Tokens', v: r.tokens.toLocaleString() },
+          { l: 'Coste', v: `€${r.cost.toFixed(4)}` },
+        ].map((x, i) => (
+          <div key={i} className="card" style={{ padding: 12 }}>
+            <div className="label-sm muted">{x.l}</div>
+            <div className="title-lg" style={{ marginTop: 4 }}>{x.v}</div>
+          </div>
+        ))}
+      </div>
+
+      <div>
+        <div className="label-sm muted" style={{ marginBottom: 8 }}>REQUEST · JSON</div>
+        <pre className="mono-block" style={{ background: '#0e1314', color: '#d2f4fc', padding: 20, borderRadius: 'var(--r-lg)', fontSize: 12 }}>
+{JSON.stringify(request, null, 2)}
+        </pre>
+      </div>
+
+      <div>
+        <div className="label-sm muted" style={{ marginBottom: 8 }}>OUTPUT · MARKDOWN</div>
+        <div className="card md-out" style={{ background: 'var(--surface_container_low)', padding: 20 }}>
+          <h2>Decisiones acordadas</h2>
+          <ul>
+            <li>Latinia entregará propuesta técnica para la ventana 02:00-02:15 UTC (Marc Oller)</li>
+            <li>BBVA revisará el SLA con core banking</li>
+          </ul>
+          <h2>Riesgos y bloqueos</h2>
+          <ul><li>1,3% de notificaciones push con retraso de 6-9 min.</li></ul>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+window.ScreenHistory = ScreenHistory;
+
+
+// ====== screen_admin.jsx ======
+// Admin — users, providers, policies
+const ScreenAdmin = () => {
+  const [tab, setTab] = useState('users');
+  const toast = useToast();
+  return (
+    <div className="page page-wide">
+      <div style={{ marginBottom: 32 }}>
+        <div className="label-sm faint" style={{ marginBottom: 12 }}>CONFIGURACIÓN DEL SISTEMA</div>
+        <h1 className="display-md" style={{ margin: 0 }}>Administración</h1>
+      </div>
+
+      <div className="tabs" style={{ marginBottom: 28 }}>
+        {[{id:'users',l:'Usuarios y roles'},{id:'providers',l:'Proveedores de IA'},{id:'policies',l:'Políticas y límites'},{id:'audit',l:'Auditoría'}].map(t => (
+          <button key={t.id} className={`tab ${tab === t.id ? 'active' : ''}`} onClick={() => setTab(t.id)}>{t.l}</button>
+        ))}
+      </div>
+
+      {tab === 'users' && (
+        <div>
+          <div className="hstack" style={{ marginBottom: 16 }}>
+            <div>
+              <div className="headline-sm">Miembros del workspace</div>
+              <div className="label-sm muted">9 usuarios · 3 roles · MFA obligatorio para admins</div>
+            </div>
+            <div style={{ marginLeft: 'auto' }}>
+              <button className="btn btn-primary" onClick={() => toast({ tone: 'primary', icon: 'send', title: 'Invitación enviada', sub: 'nuevo.usuario@latinia.com' })}><Icon name="plus" size={14}/> Invitar usuario</button>
+            </div>
+          </div>
+          <div className="table-wrap">
+            <table className="v-table">
+              <thead>
+                <tr><th>Usuario</th><th>Rol</th><th>Unidad</th><th>MFA</th><th>Última actividad</th><th /></tr>
+              </thead>
+              <tbody>
+                {DATA.users.map(u => (
+                  <tr key={u.email}>
+                    <td>
+                      <div className="hstack">
+                        <div className="avatar" style={{ background: 'var(--primary_container)', color: 'white' }}>{u.name.split(' ').map(s=>s[0]).join('').slice(0,2)}</div>
+                        <div>
+                          <div className="title-md">{u.name}</div>
+                          <div className="label-sm muted font-mono">{u.email}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`badge ${u.role === 'Administrador' ? 'badge-primary' : u.role === 'Aprobador' ? 'badge-tertiary' : u.role === 'Editor' ? 'badge-success' : 'badge-neutral'}`}>
+                        <span className="bullet"/>{u.role}
+                      </span>
+                    </td>
+                    <td>{u.unit}</td>
+                    <td>{u.mfa ? <Icon name="check-circle" size={16} style={{ color: 'var(--success)' }}/> : <Icon name="warn" size={16} style={{ color: 'var(--warning)' }}/>}</td>
+                    <td className="muted">{u.lastSeen}</td>
+                    <td><button className="icon-btn"><Icon name="more"/></button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {tab === 'providers' && (
+        <div>
+          <div className="hstack" style={{ marginBottom: 16 }}>
+            <div>
+              <div className="headline-sm">Proveedores de IA</div>
+              <div className="label-sm muted">Credenciales cifradas · rotación automática cada 90 días</div>
+            </div>
+            <button style={{ marginLeft: 'auto' }} className="btn btn-primary"><Icon name="plus" size={14}/> Añadir proveedor</button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 16 }}>
+            {DATA.providers.map(p => (
+              <div key={p.name} className="card-raised">
+                <div className="hstack" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
+                  <div>
+                    <div className="label-sm muted">{p.kind}</div>
+                    <div className="headline-sm" style={{ marginTop: 2 }}>{p.name}</div>
+                  </div>
+                  <StatusBadge status={p.status} />
+                </div>
+                <div className="body-md muted" style={{ marginBottom: 16 }}>{p.models}</div>
+                <div className="vstack" style={{ gap: 8 }}>
+                  <div className="hstack"><Icon name="globe" size={14} style={{ color: 'var(--outline)' }}/> <span className="label-md">{p.region}</span></div>
+                  <div className="hstack"><Icon name="key" size={14} style={{ color: 'var(--outline)' }}/> <span className="label-md font-mono">{p.keyHint}</span></div>
+                </div>
+                <div className="hstack" style={{ marginTop: 16 }}>
+                  <Toggle value={true} />
+                  <span className="label-md muted">Habilitado</span>
+                  <button className="btn btn-ghost btn-sm" style={{ marginLeft: 'auto' }}>Configurar <Icon name="chevron-r" size={14}/></button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tab === 'policies' && (
+        <div className="vstack" style={{ gap: 16 }}>
+          <div className="card-raised">
+            <div className="headline-sm" style={{ marginBottom: 4 }}>Límites mensuales</div>
+            <div className="body-md muted" style={{ marginBottom: 20 }}>Topes operativos para proteger el presupuesto y detectar abuso.</div>
+            {[
+              { l: 'Ejecuciones totales', used: 8942, cap: 12000, unit: '' },
+              { l: 'Tokens procesados', used: 18.4, cap: 30, unit: 'M' },
+              { l: 'Coste acumulado', used: 1840, cap: 2500, unit: '€' },
+              { l: 'Audio transcrito', used: 312, cap: 500, unit: 'h' },
+            ].map((x, i) => (
+              <div key={i} style={{ padding: '12px 0' }}>
+                <div className="hstack" style={{ justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span className="title-md">{x.l}</span>
+                  <span className="label-md font-mono muted">{x.unit === '€' ? `€${x.used.toLocaleString()}` : `${x.used.toLocaleString()} ${x.unit}`} / {x.unit === '€' ? `€${x.cap.toLocaleString()}` : `${x.cap.toLocaleString()} ${x.unit}`}</span>
+                </div>
+                <div className="progress thick"><div className="bar" style={{ width: `${(x.used/x.cap)*100}%`, background: (x.used/x.cap) > 0.7 ? 'var(--warning)' : 'var(--primary_container)' }}/></div>
+              </div>
+            ))}
+          </div>
+
+          <div className="card-raised">
+            <div className="headline-sm" style={{ marginBottom: 16 }}>Políticas de seguridad</div>
+            <div className="vstack" style={{ gap: 12 }}>
+              {[
+                { t: 'Detección de PII previo a ejecución', d: 'Bloquea prompts con datos personales en claro (DNI, tarjetas, IBAN).', on: true },
+                { t: 'MFA obligatorio para admins y aprobadores', d: 'TOTP o FIDO2. Sesiones caducan a las 8 h.', on: true },
+                { t: 'Retención de logs 365 días', d: 'Los logs de ejecución se conservan durante 1 año según política interna.', on: true },
+                { t: 'Rate limit por usuario · 120 req/min', d: 'Usuarios humanos. Los tokens API tienen su propio rate limit.', on: true },
+                { t: 'Bloqueo de prompts con datos > región EU', d: 'Refuerza residencia de datos en la UE.', on: false },
+              ].map((p, i) => (
+                <div key={i} className="hstack" style={{ padding: 16, background: 'var(--surface_container_low)', borderRadius: 'var(--r-md)' }}>
+                  <div>
+                    <div className="title-md">{p.t}</div>
+                    <div className="body-sm muted" style={{ marginTop: 2 }}>{p.d}</div>
+                  </div>
+                  <Toggle value={p.on} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === 'audit' && (
+        <div className="card-raised">
+          <div className="headline-sm" style={{ marginBottom: 20 }}>Eventos de auditoría · hoy</div>
+          <div className="vstack" style={{ gap: 0 }}>
+            {[
+              { icon: 'check-circle', tone: 'var(--success)', t: 'Prompt pr-0208 aprobado por Diego Soto', at: '10:12' },
+              { icon: 'key',          tone: 'var(--warning)', t: 'Rotación de API key · Anthropic', at: '09:45' },
+              { icon: 'user',         tone: 'var(--primary_container)', t: 'Nuevo usuario invitado · nora.vila@latinia.com (Editor)', at: '09:30' },
+              { icon: 'shield',       tone: 'var(--primary_container)', t: 'Política actualizada · PII detection → on', at: '09:15' },
+              { icon: 'x-circle',     tone: 'var(--error)', t: '12 intentos fallidos de login · sara.klein@latinia.com', at: '08:58' },
+              { icon: 'edit',         tone: 'var(--on_surface_variant)', t: 'Conector Slack reconfigurado · #banking-ops añadido', at: '08:22' },
+            ].map((e, i) => (
+              <div key={i} className="hstack" style={{ padding: '14px 0', borderTop: i === 0 ? 'none' : '1px solid var(--surface_container_high)' }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--surface_container_low)', display: 'grid', placeItems: 'center', color: e.tone, flex: 'none' }}>
+                  <Icon name={e.icon} size={16} />
+                </div>
+                <span className="body-md" style={{ flex: 1 }}>{e.t}</span>
+                <span className="label-sm muted font-mono">hoy · {e.at}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+window.ScreenAdmin = ScreenAdmin;
+
+
+// ====== tweaks.jsx ======
+// Tweaks panel
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accent": "teal",
+  "density": "balanced",
+  "sidebarCollapsed": false,
+  "role": "Consumidor"
+}/*EDITMODE-END*/;
+
+const ACCENTS = {
+  teal:   { name: 'Teal (default)',    primary: '#023039', secondary: '#7b5456' },
+  maroon: { name: 'Maroon dominante',  primary: '#5c2b35', secondary: '#023039' },
+  forest: { name: 'Bosque',            primary: '#1e3f32', secondary: '#7b5456' },
+  coral:  { name: 'Coral ejecutivo',   primary: '#8a3a1f', secondary: '#023039' },
+};
+
+const TweaksPanel = ({ open, state, setState, onClose }) => {
+  useEffect(() => {
+    const acc = ACCENTS[state.accent] || ACCENTS.teal;
+    document.documentElement.style.setProperty('--primary_container', acc.primary);
+    document.documentElement.style.setProperty('--secondary', acc.secondary);
+  }, [state.accent]);
+
+  if (!open) return null;
+  const set = (k, v) => {
+    const next = { ...state, [k]: v };
+    setState(next);
+    try { window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [k]: v } }, '*'); } catch {}
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', right: 24, bottom: 24, width: 320, zIndex: 80,
+      background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(20px)',
+      borderRadius: 16, boxShadow: '0 20px 40px rgba(2,48,57,0.14)',
+      animation: 'slide-up 180ms cubic-bezier(.2,.7,.2,1)',
+    }}>
+      <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="hstack" style={{ gap: 8 }}>
+          <Icon name="settings" size={16} />
+          <span className="title-md">Tweaks</span>
+        </div>
+        <button className="icon-btn" onClick={onClose}><Icon name="x" size={14}/></button>
+      </div>
+      <div style={{ padding: 18, paddingTop: 4 }}>
+        <div className="vstack" style={{ gap: 20 }}>
+          <div>
+            <div className="label-sm muted" style={{ marginBottom: 8 }}>ROL DE USUARIO</div>
+            <div className="hstack" style={{ gap: 6, flexWrap: 'wrap' }}>
+              {['Administrador', 'Aprobador', 'Editor', 'Consumidor'].map(r => (
+                <button key={r} className="btn btn-sm" style={{
+                  background: state.role === r ? 'var(--primary_container)' : 'var(--surface_container_high)',
+                  color: state.role === r ? 'white' : 'var(--on_surface)',
+                }} onClick={() => set('role', r)}>{r}</button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="label-sm muted" style={{ marginBottom: 8 }}>ACENTO DE MARCA</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+              {Object.entries(ACCENTS).map(([k, a]) => (
+                <button key={k} onClick={() => set('accent', k)} className="hstack"
+                  style={{ padding: 10, borderRadius: 8, cursor: 'pointer', background: state.accent === k ? 'var(--surface_container_high)' : 'transparent', border: 'none', textAlign: 'left' }}>
+                  <span style={{ width: 18, height: 18, borderRadius: 4, background: a.primary, flex: 'none' }}/>
+                  <span className="label-md">{a.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="label-sm muted" style={{ marginBottom: 8 }}>DENSIDAD</div>
+            <div className="hstack" style={{ gap: 6 }}>
+              {['balanced', 'comfortable', 'compact'].map(d => (
+                <button key={d} className="btn btn-sm" style={{
+                  background: state.density === d ? 'var(--primary_container)' : 'var(--surface_container_high)',
+                  color: state.density === d ? 'white' : 'var(--on_surface)',
+                }} onClick={() => set('density', d)}>{d}</button>
+              ))}
+            </div>
+          </div>
+
+          <div className="hstack" style={{ justifyContent: 'space-between' }}>
+            <span className="label-md">Sidebar plegada</span>
+            <Toggle value={state.sidebarCollapsed} onChange={() => set('sidebarCollapsed', !state.sidebarCollapsed)} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+window.TweaksPanel = TweaksPanel;
+window.TWEAK_DEFAULTS = TWEAK_DEFAULTS;
+
+
+// ====== app.jsx ======
+// Main App
+const App = () => {
+  const persistedView = typeof localStorage !== 'undefined' ? localStorage.getItem('vellum-view') : null;
+  const [authed, setAuthed] = useState(() => (typeof localStorage !== 'undefined' ? localStorage.getItem('vellum-auth') === '1' : false));
+  const [view, setView] = useState(persistedView || 'dashboard');
+  const [openPromptId, setOpenPromptId] = useState(null);
+  const [openTranscriptId, setOpenTranscriptId] = useState(null);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [theme, setTheme] = useState('light');
+
+  const [tweakState, setTweakState] = useState(TWEAK_DEFAULTS);
+  const [tweaksOpen, setTweaksOpen] = useState(false);
+
+  // sidebar collapsed follows tweak state
+  const sidebarCollapsed = tweakState.sidebarCollapsed;
+
+  useEffect(() => { try { localStorage.setItem('vellum-view', view); } catch {} }, [view]);
+  useEffect(() => { try { localStorage.setItem('vellum-auth', authed ? '1' : '0'); } catch {} }, [authed]);
+
+  // theme class on root
+  useEffect(() => {
+    document.documentElement.classList.toggle('theme-dark', theme === 'dark');
+  }, [theme]);
+
+  // Edit mode bridge
+  useEffect(() => {
+    const handler = (e) => {
+      if (!e.data) return;
+      if (e.data.type === '__activate_edit_mode') setTweaksOpen(true);
+      if (e.data.type === '__deactivate_edit_mode') setTweaksOpen(false);
+    };
+    window.addEventListener('message', handler);
+    try { window.parent.postMessage({ type: '__edit_mode_available' }, '*'); } catch {}
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  if (!authed) {
+    return (
+      <ToastProvider>
+        <ScreenLogin onEnter={() => setAuthed(true)} />
+      </ToastProvider>
+    );
+  }
+
+  const navigate = (v) => {
+    setOpenPromptId(null);
+    setOpenTranscriptId(null);
+    setView(v);
+  };
+
+  let screen = null;
+  if (openPromptId)          screen = <ScreenPromptEditor onBack={() => setOpenPromptId(null)} />;
+  else if (openTranscriptId) screen = <ScreenTranscriptEditor onBack={() => setOpenTranscriptId(null)} onRunPrompt={() => { setOpenTranscriptId(null); setView('playground'); }} />;
+  else if (view === 'dashboard')   screen = <ScreenDashboard onNav={navigate} />;
+  else if (view === 'prompts')     screen = <ScreenPrompts onOpenPrompt={(id) => setOpenPromptId(id)} />;
+  else if (view === 'transcripts') screen = <ScreenTranscripts onOpen={(id) => setOpenTranscriptId(id)} />;
+  else if (view === 'playground')  screen = <ScreenPlayground />;
+  else if (view === 'connectors')  screen = <ScreenConnectors />;
+  else if (view === 'history')     screen = <ScreenHistory />;
+  else if (view === 'admin')       screen = <ScreenAdmin />;
+
+  const isEditorMode = !!openPromptId || !!openTranscriptId;
+
+  return (
+    <ToastProvider>
+      <div className="app-shell">
+        <Sidebar current={view} onNav={navigate} collapsed={sidebarCollapsed} onToggle={() => setTweakState(s => ({...s, sidebarCollapsed: !s.sidebarCollapsed}))} />
+        <main className="main">
+          <Topbar theme={theme} onToggleTheme={() => setTheme(t => t === 'light' ? 'dark' : 'light')} onNotif={() => setNotifOpen(!notifOpen)} />
+          {screen}
+          <NotificationsPanel open={notifOpen} onClose={() => setNotifOpen(false)} />
+        </main>
+        <TweaksPanel open={tweaksOpen} state={tweakState} setState={setTweakState} onClose={() => setTweaksOpen(false)} />
+      </div>
+    </ToastProvider>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
+
+</script>
+</body>
+</html>
