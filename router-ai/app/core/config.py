@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     anthropic_api_key: SecretStr | None = None
     openai_api_key: SecretStr | None = None
     deepseek_api_key: SecretStr | None = None
+    google_api_key: SecretStr | None = None
     deepseek_base_url: str = "https://api.deepseek.com/v1"
     ollama_base_url: str = "http://localhost:11434"
     lmstudio_base_url: str = "http://localhost:1234/v1"

@@ -8,6 +8,7 @@
 Backend ──► router-ai ──► AnthropicAdapter  ──► Anthropic API
                      ├──► OpenAIAdapter     ──► OpenAI API
                      ├──► DeepSeekAdapter   ──► DeepSeek API
+                     ├──► GoogleAdapter     ──► Google AI Studio (Gemini)
                      ├──► OllamaAdapter     ──► Ollama (local)
                      └──► LMStudioAdapter   ──► LM Studio (local)
 ```
@@ -31,6 +32,7 @@ router-ai/
 │   │   ├── anthropic.py
 │   │   ├── openai.py
 │   │   ├── deepseek.py
+│   │   ├── google.py
 │   │   ├── ollama.py
 │   │   └── lmstudio.py
 │   ├── core/
@@ -94,6 +96,10 @@ async def startup(self) -> None:
         self.register("anthropic", AnthropicAdapter(...))
     if settings.openai_api_key:
         self.register("openai", OpenAIAdapter(...))
+    if settings.deepseek_api_key:
+        self.register("deepseek", DeepSeekAdapter(...))
+    if settings.google_api_key:
+        self.register("google", GoogleAdapter(...))
     # Ollama y LM Studio no requieren API key, siempre se registran
     self.register("ollama", OllamaAdapter(...))
     self.register("lmstudio", LMStudioAdapter(...))
@@ -173,18 +179,90 @@ Para migrar: implementar `RedisRateLimitStore(RateLimitStore)` e inyectarlo en `
 
 ## Configuración de entorno
 
-| Variable | Descripción | Requerida |
-|----------|-------------|-----------|
-| `ROUTER_AI_API_KEY` | API key interna para autenticar clientes | **Sí** |
-| `ANTHROPIC_API_KEY` | Clave API de Anthropic | No |
-| `OPENAI_API_KEY` | Clave API de OpenAI | No |
-| `DEEPSEEK_API_KEY` | Clave API de DeepSeek | No |
-| `DEEPSEEK_BASE_URL` | URL base de DeepSeek (default: `https://api.deepseek.com/v1`) | No |
-| `OLLAMA_BASE_URL` | URL de Ollama (default: `http://localhost:11434`) | No |
-| `LMSTUDIO_BASE_URL` | URL de LM Studio (default: `http://localhost:1234/v1`) | No |
-| `LOG_LEVEL` | Nivel de log: `DEBUG`, `INFO`, `WARNING` (default: `INFO`) | No |
-| `LOG_DIR` | Directorio para logs persistentes (default: `/logs`) | No |
-| `RATE_LIMITS_CONFIG` | Ruta al YAML de rate limits (default: `config/rate_limits.yaml`) | No |
+### Variables de entorno
+
+`pydantic-settings` carga la configuración en `app/core/config.py` desde tres fuentes en orden de precedencia (mayor a menor): variables de entorno del proceso → archivo `.env` → valores por defecto del modelo. En producción usa variables de entorno; en desarrollo usa `.env`.
+
+```bash
+# Punto de partida: copia el ejemplo y edítalo
+cp .env.example .env
+```
+
+| Variable | Descripción | Requerida | Default |
+|----------|-------------|:---------:|---------|
+| `ROUTER_AI_API_KEY` | Clave interna; clientes la envían en `X-API-Key` | **Sí** | — |
+| `ANTHROPIC_API_KEY` | Clave API de Anthropic | No | `None` |
+| `OPENAI_API_KEY` | Clave API de OpenAI | No | `None` |
+| `DEEPSEEK_API_KEY` | Clave API de DeepSeek | No | `None` |
+| `DEEPSEEK_BASE_URL` | URL base de DeepSeek | No | `https://api.deepseek.com/v1` |
+| `GOOGLE_API_KEY` | Clave API de Google AI Studio (Gemini) | No | `None` |
+| `OLLAMA_BASE_URL` | URL de Ollama | No | `http://localhost:11434` |
+| `LMSTUDIO_BASE_URL` | URL de LM Studio | No | `http://localhost:1234/v1` |
+| `LOG_LEVEL` | Nivel de log: `DEBUG` / `INFO` / `WARNING` | No | `INFO` |
+| `LOG_DIR` | Directorio para logs persistentes | No | `/logs` |
+| `RATE_LIMITS_CONFIG` | Ruta al YAML de rate limits | No | `config/rate_limits.yaml` |
+
+**Generación de `ROUTER_AI_API_KEY`:**
+
+```bash
+openssl rand -base64 32
+```
+
+**Relación entre variables y proveedores activos:**
+
+`ProviderRegistry.startup()` (en `app/core/registry.py`) instancia únicamente los adaptadores cuya variable de API key está definida y no es vacía. Ollama y LM Studio siempre se instancian porque son locales:
+
+```python
+if settings.anthropic_api_key:
+    self.register("anthropic", AnthropicAdapter(...))
+if settings.openai_api_key:
+    self.register("openai", OpenAIAdapter(...))
+if settings.deepseek_api_key:
+    self.register("deepseek", DeepSeekAdapter(...))
+if settings.google_api_key:
+    self.register("google", GoogleAdapter(...))
+self.register("ollama",    OllamaAdapter(...))   # siempre activo
+self.register("lmstudio",  LMStudioAdapter(...)) # siempre activo
+```
+
+Una variable ausente o comentada en `.env` equivale a deshabilitar el proveedor: las solicitudes a ese proveedor recibirán `HTTP 422 PROVIDER_NOT_FOUND`.
+
+---
+
+### Rate limits (`config/rate_limits.yaml`)
+
+El archivo `config/rate_limits.yaml` controla los límites de uso por proveedor mediante una ventana deslizante de 60 segundos. Se carga al arranque por `RateLimiter` y se monta como volumen Docker independiente de la imagen.
+
+**Estructura:**
+
+```yaml
+providers:
+  <nombre_proveedor>:
+    requests_per_minute: <entero | null>   # null = sin límite
+    tokens_per_minute:   <entero | null>
+```
+
+**Valores actuales:**
+
+| Proveedor | RPM | TPM |
+|-----------|----:|----:|
+| `anthropic` | 60 | 100 000 |
+| `openai` | 100 | 150 000 |
+| `deepseek` | 50 | 80 000 |
+| `google` | 60 | 100 000 |
+| `ollama` | 200 | sin límite |
+| `lmstudio` | 200 | sin límite |
+
+Ajusta los valores según los límites de tu plan en cada proveedor. El cambio es efectivo en el siguiente reinicio del servicio (el YAML se lee en el `lifespan`). Cuando un límite se supera, `RateLimitMiddleware` devuelve `HTTP 429` con el cuerpo:
+
+```json
+{
+  "code": "RATE_LIMIT_EXCEEDED",
+  "limit_type": "requests_per_minute",
+  "provider": "openai",
+  "retry_after_seconds": 23
+}
+```
 
 ---
 
@@ -197,6 +275,7 @@ Para migrar: implementar `RedisRateLimitStore(RateLimitStore)` e inyectarlo en `
 | `pydantic` / `pydantic-settings` | Modelos y configuración |
 | `anthropic` | SDK de Anthropic |
 | `openai` | SDK de OpenAI |
+| `google-genai` | SDK de Google AI Studio (Gemini) |
 | `httpx` | Cliente HTTP async para DeepSeek, Ollama y LM Studio |
 | `pyyaml` | Lectura de `rate_limits.yaml` |
 

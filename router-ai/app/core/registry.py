@@ -28,6 +28,7 @@ class ProviderRegistry:
         from app.adapters.deepseek import DeepSeekAdapter
         from app.adapters.ollama import OllamaAdapter
         from app.adapters.lmstudio import LMStudioAdapter
+        from app.adapters.google import GoogleAdapter
 
         if settings.anthropic_api_key:
             self.register("anthropic", AnthropicAdapter(settings.anthropic_api_key.get_secret_value()))
@@ -40,6 +41,9 @@ class ProviderRegistry:
                 api_key=settings.deepseek_api_key.get_secret_value(),
                 base_url=settings.deepseek_base_url,
             ))
+
+        if settings.google_api_key:
+            self.register("google", GoogleAdapter(settings.google_api_key.get_secret_value()))
 
         self.register("ollama", OllamaAdapter(base_url=settings.ollama_base_url))
         self.register("lmstudio", LMStudioAdapter(base_url=settings.lmstudio_base_url))

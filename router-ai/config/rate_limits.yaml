@@ -26,6 +26,10 @@ providers:
     requests_per_minute: 50
     tokens_per_minute: 80000
 
+  google:
+    requests_per_minute: 60
+    tokens_per_minute: 100000
+
   ollama:
     requests_per_minute: 200
     tokens_per_minute: null  # local, sin límite de tokens

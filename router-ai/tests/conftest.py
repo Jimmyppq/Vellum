@@ -16,6 +16,11 @@ def mock_settings(monkeypatch):
     monkeypatch.setenv("ROUTER_AI_API_KEY", API_KEY)
     monkeypatch.setenv("LOG_LEVEL", "WARNING")
     monkeypatch.setenv("LOG_DIR", "/tmp/router-ai-tests")
+    # Settings es un singleton cargado al importar; parchear la instancia directamente
+    # para que verify_api_key compare contra API_KEY y no contra el valor del proceso.
+    from app.core import config
+    from pydantic import SecretStr
+    monkeypatch.setattr(config.settings, "router_ai_api_key", SecretStr(API_KEY))
 
 
 @pytest.fixture(autouse=True)

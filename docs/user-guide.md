@@ -13,6 +13,93 @@ Documentación interactiva (Swagger): `http://localhost:8000/docs`
 
 ---
 
+## Configuración
+
+### Variables de entorno (`.env`)
+
+Copia el archivo de ejemplo y edítalo con tus credenciales reales antes de arrancar el servicio:
+
+```bash
+cd router-ai
+cp .env.example .env
+```
+
+El archivo `.env` contiene dos grupos de configuración:
+
+**Clave interna del router** — la que tus clientes deben enviar en el header `X-API-Key`:
+
+```bash
+# Genera una clave segura con:
+# openssl rand -base64 32
+ROUTER_AI_API_KEY=BblTpOyDpOq8rOU+27VwO0/nhr3P34Cz3E0CpPKhRvY=
+```
+
+**API keys de proveedores LLM** — solo incluye las de los proveedores que vayas a usar:
+
+```bash
+# Anthropic Claude
+ANTHROPIC_API_KEY=sk-ant-...
+
+# OpenAI GPT
+OPENAI_API_KEY=sk-...
+
+# DeepSeek
+DEEPSEEK_API_KEY=sk-...
+DEEPSEEK_BASE_URL=https://api.deepseek.com/v1   # ya tiene valor por defecto
+
+# Google AI Studio (Gemini)
+GOOGLE_API_KEY=AIza...
+
+# Proveedores locales (sin API key; ajusta la URL si corren en otro host/puerto)
+OLLAMA_BASE_URL=http://localhost:11434
+LMSTUDIO_BASE_URL=http://localhost:1234/v1
+```
+
+> **Activación automática:** el router registra únicamente los proveedores cuya API key está presente en `.env`. Si omites `OPENAI_API_KEY`, OpenAI no estará disponible y las solicitudes a ese proveedor recibirán `PROVIDER_NOT_FOUND`. Ollama y LM Studio siempre se registran porque son locales y no requieren clave.
+
+Consulta en cualquier momento qué proveedores están activos:
+
+```bash
+curl http://localhost:8000/v1/providers -H "X-API-Key: tu-clave-secreta"
+```
+
+---
+
+### Límites de uso (`config/rate_limits.yaml`)
+
+El archivo `config/rate_limits.yaml` define cuántas solicitudes y tokens se permiten por minuto para cada proveedor. Se monta como volumen Docker, por lo que puedes modificarlo **sin reconstruir la imagen ni reiniciar el contenedor**.
+
+```yaml
+providers:
+  anthropic:
+    requests_per_minute: 60      # máx. 60 solicitudes por ventana de 60 s
+    tokens_per_minute: 100000    # máx. 100 000 tokens por ventana de 60 s
+
+  openai:
+    requests_per_minute: 100
+    tokens_per_minute: 150000
+
+  deepseek:
+    requests_per_minute: 50
+    tokens_per_minute: 80000
+
+  google:
+    requests_per_minute: 60
+    tokens_per_minute: 100000
+
+  ollama:
+    requests_per_minute: 200
+    tokens_per_minute: null      # null = sin límite (recomendado para modelos locales)
+
+  lmstudio:
+    requests_per_minute: 200
+    tokens_per_minute: null
+```
+
+Ajusta los valores según los límites que imponga tu plan en cada proveedor o según la capacidad de tu infraestructura local. Cuando se supera un límite, la respuesta devuelve HTTP `429` con el campo `retry_after_seconds` indicando cuántos segundos esperar antes de reintentar (ver [Códigos de error](#códigos-de-error)).
+
+---
+
 ## Autenticación
 
 Todas las solicitudes (excepto `/v1/health`) requieren el header `X-API-Key` con el valor configurado en `ROUTER_AI_API_KEY`:
@@ -30,6 +117,7 @@ Todas las solicitudes (excepto `/v1/health`) requieren el header `X-API-Key` con
 | `anthropic` | Anthropic Claude (requiere `ANTHROPIC_API_KEY`) |
 | `openai` | OpenAI GPT (requiere `OPENAI_API_KEY`) |
 | `deepseek` | DeepSeek (requiere `DEEPSEEK_API_KEY`) |
+| `google` | Google Gemini via AI Studio (requiere `GOOGLE_API_KEY`) |
 | `ollama` | Ollama local (sin API key, requiere Ollama corriendo) |
 | `lmstudio` | LM Studio local (sin API key, requiere LM Studio corriendo) |
 
@@ -110,6 +198,18 @@ curl -s -X POST http://localhost:8000/v1/message \
       {"role": "user", "content": "Escribe un haiku sobre el mar."}
     ],
     "options": {"temperature": 0.9}
+  }' | jq
+
+# Google Gemini
+curl -s -X POST http://localhost:8000/v1/message \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: tu-clave-secreta" \
+  -d '{
+    "provider": "google",
+    "model": "gemini-2.0-flash",
+    "messages": [
+      {"role": "user", "content": "¿Cuál es la diferencia entre ML y DL?"}
+    ]
   }' | jq
 
 # Ollama (modelo local)
@@ -244,7 +344,7 @@ curl -s -N -X POST http://localhost:8000/v1/stream \
 
 Genera vectores de embedding para texto.
 
-> Nota: Anthropic no soporta embeddings y retorna HTTP 501.
+> Nota: Anthropic no soporta embeddings y retorna HTTP 501. Google sí soporta embeddings (`text-embedding-004`).
 
 **Ejemplos:**
 
@@ -271,6 +371,15 @@ curl -s -X POST http://localhost:8000/v1/embed \
       "Tercera frase de ejemplo."
     ]
   }' | jq '{provider, model, count: (.embeddings | length)}'
+
+# Embedding con Google (text-embedding-004)
+curl -s -X POST http://localhost:8000/v1/embed \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: tu-clave-secreta" \
+  -d '{
+    "provider": "google",
+    "input": "La inteligencia artificial transforma la industria."
+  }' | jq '{provider, model, dimensions: (.embeddings[0] | length)}'
 
 # Embedding con Ollama
 curl -s -X POST http://localhost:8000/v1/embed \
