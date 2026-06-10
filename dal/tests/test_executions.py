@@ -2,6 +2,7 @@ import uuid
 
 import pytest
 
+from app.repositories.errors import InvalidStateTransition
 from app.repositories.executions import ExecutionsRepository
 from app.repositories.prompt_versions import PromptVersionsRepository
 from app.repositories.prompts import PromptsRepository
@@ -42,6 +43,7 @@ async def test_update_status_completed_sets_completed_at(db_session):
         prompt_id=prompt.id, version_id=version.id,
         executed_by=user.id, input_data={},
     ))
+    await repo.update_status(execution.id, "running")
     updated = await repo.update_status(execution.id, "completed", {"result": "ok"})
     assert updated.status == "completed"
     assert updated.completed_at is not None
@@ -56,6 +58,7 @@ async def test_update_status_failed_sets_completed_at(db_session):
         prompt_id=prompt.id, version_id=version.id,
         executed_by=user.id, input_data={},
     ))
+    await repo.update_status(execution.id, "running")
     updated = await repo.update_status(execution.id, "failed")
     assert updated.status == "failed"
     assert updated.completed_at is not None
@@ -81,7 +84,7 @@ async def test_update_status_invalid_raises(db_session):
         prompt_id=prompt.id, version_id=version.id,
         executed_by=user.id, input_data={},
     ))
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidStateTransition):
         await repo.update_status(execution.id, "bogus")
 
 
@@ -114,6 +117,9 @@ async def test_execution_endpoint_patch_status(client):
     })
     assert exec_resp.status_code == 201
     exec_id = exec_resp.json()["data"]["id"]
+
+    run_resp = await client.patch(f"/v1/executions/{exec_id}/status", json={"status": "running"})
+    assert run_resp.status_code == 200
 
     patch_resp = await client.patch(f"/v1/executions/{exec_id}/status", json={"status": "completed"})
     assert patch_resp.status_code == 200

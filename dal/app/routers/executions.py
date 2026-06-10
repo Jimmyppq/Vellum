@@ -5,6 +5,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_session
+from app.repositories.errors import (
+    ExecutionNotFound,
+    InvalidPayloadForTransition,
+    InvalidStateTransition,
+)
 from app.repositories.executions import ExecutionsRepository
 from app.schemas.requests import ExecutionCreate, ExecutionStatusUpdate
 from app.schemas.responses import ExecutionResponse, ResponseMeta, SuccessResponse
@@ -36,9 +41,19 @@ async def get_execution(id: UUID, session: AsyncSession = Depends(get_session)):
 async def update_execution_status(id: UUID, body: ExecutionStatusUpdate, session: AsyncSession = Depends(get_session)):
     repo = ExecutionsRepository(session)
     try:
-        execution = await repo.update_status(id, body.status, body.output_data)
-    except ValueError as exc:
+        execution = await repo.update_status(id, body.status, body.output_data, body.cost)
+    except InvalidPayloadForTransition as exc:
+        raise HTTPException(
+            status_code=400,
+            detail={"code": "INVALID_PAYLOAD_FOR_TRANSITION", "message": str(exc)},
+        )
+    except ExecutionNotFound as exc:
         raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": str(exc)})
+    except InvalidStateTransition as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={"code": "INVALID_STATE_TRANSITION", "message": str(exc)},
+        )
     return SuccessResponse(data=execution, meta=_meta())
 
 

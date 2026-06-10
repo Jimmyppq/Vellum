@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config import configure_logging, get_settings
 from app.database import verify_schema_version
@@ -27,6 +28,24 @@ app = FastAPI(title="Vellum DAL", version="1.0.0", lifespan=lifespan)
 # Middleware — order matters: trace_id must run first so auth can read it
 app.add_middleware(InternalAuthMiddleware)
 app.add_middleware(TraceIdMiddleware)
+
+
+# HTTPExceptions raised by routers carry detail={"code": ..., "message": ...};
+# wrap them in the standard error envelope with the request trace_id
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    trace_id = getattr(request.state, "trace_id", "")
+    if isinstance(exc.detail, dict):
+        code = exc.detail.get("code", "ERROR")
+        message = exc.detail.get("message", "")
+    else:
+        code = "ERROR"
+        message = str(exc.detail)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"error": {"code": code, "message": message, "trace_id": trace_id}},
+        headers=exc.headers,
+    )
 
 
 # Standard error handler for HTTPException details

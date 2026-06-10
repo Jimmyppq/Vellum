@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
@@ -7,11 +8,24 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.schema import executions
+from app.repositories.errors import (
+    ExecutionNotFound,
+    InvalidPayloadForTransition,
+    InvalidStateTransition,
+)
 from app.schemas.requests import ExecutionCreate
 from app.schemas.responses import ExecutionResponse
 
-TERMINAL_STATUSES = {"completed", "failed"}
-VALID_STATUSES = {"queued", "running", "completed", "failed"}
+TERMINAL_STATUSES = {"completed", "failed", "cancelled"}
+# State machine: target status -> allowed source statuses. Any transition not
+# listed here (including same -> same) is rejected. "queued" is never a valid
+# target: executions only enter it on create.
+ALLOWED_SOURCES = {
+    "running": {"queued"},
+    "completed": {"running"},
+    "failed": {"running"},
+    "cancelled": {"queued"},
+}
 
 
 def _row_to_response(row) -> ExecutionResponse:
@@ -64,26 +78,50 @@ class ExecutionsRepository:
         return _row_to_response(row) if row else None
 
     async def update_status(
-        self, id: UUID, status: str, output: dict[str, Any] | None = None
+        self,
+        id: UUID,
+        status: str,
+        output: dict[str, Any] | None = None,
+        cost: Decimal | None = None,
     ) -> ExecutionResponse:
-        if status not in VALID_STATUSES:
-            raise ValueError(f"Invalid status '{status}'. Must be one of {VALID_STATUSES}")
+        is_terminal = status in TERMINAL_STATUSES
+        if not is_terminal:
+            rejected = [
+                name for name, value in (("output_data", output), ("cost", cost))
+                if value is not None
+            ]
+            if rejected:
+                raise InvalidPayloadForTransition(status, rejected)
+
         values: dict[str, Any] = {"status": status}
-        if status in TERMINAL_STATUSES:
+        if is_terminal:
             values["completed_at"] = datetime.now(timezone.utc)
-        if output is not None:
-            values["output_data"] = output
+            if output is not None:
+                values["output_data"] = output
+            if cost is not None:
+                values["cost"] = cost
+
+        # Atomic compare-and-set: the WHERE clause enforces the state machine,
+        # so concurrent transitions can never both succeed.
+        allowed_sources = ALLOWED_SOURCES.get(status, set())
         stmt = (
             update(executions)
-            .where(executions.c.id == id)
+            .where(executions.c.id == id, executions.c.status.in_(allowed_sources))
             .values(**values)
             .returning(*executions.c)
         )
         result = await self._session.execute(stmt)
-        await self._session.commit()
         row = result.fetchone()
         if not row:
-            raise ValueError(f"Execution {id} not found")
+            await self._session.rollback()
+            current = await self._session.execute(
+                select(executions.c.status).where(executions.c.id == id)
+            )
+            current_row = current.fetchone()
+            if not current_row:
+                raise ExecutionNotFound(id)
+            raise InvalidStateTransition(current_row.status, status)
+        await self._session.commit()
         return _row_to_response(row)
 
     async def list_by_prompt(

@@ -125,7 +125,7 @@ async def test_create_prompt_endpoint(client):
 async def test_get_prompt_404(client):
     resp = await client.get(f"/v1/prompts/{uuid.uuid4()}")
     assert resp.status_code == 404
-    assert resp.json()["detail"]["code"] == "NOT_FOUND"
+    assert resp.json()["error"]["code"] == "NOT_FOUND"
 
 
 @pytest.mark.asyncio

@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Any, Literal
 from uuid import UUID
 
@@ -47,8 +48,11 @@ class ExecutionCreate(BaseModel):
 
 
 class ExecutionStatusUpdate(BaseModel):
-    status: Literal["queued", "running", "completed", "failed"]
+    # "queued" is accepted by the schema so the state machine can reject it
+    # with 409 INVALID_STATE_TRANSITION instead of a Pydantic 422
+    status: Literal["queued", "running", "completed", "failed", "cancelled"]
     output_data: dict[str, Any] | None = None
+    cost: Decimal | None = None
 
 
 class UserCreate(BaseModel):

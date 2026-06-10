@@ -73,7 +73,7 @@ async def test_create_user_duplicate_email_returns_409(client):
     await client.post("/v1/users", json={"username": f"u{uuid.uuid4().hex[:8]}", "email": email})
     resp = await client.post("/v1/users", json={"username": f"u{uuid.uuid4().hex[:8]}", "email": email})
     assert resp.status_code == 409
-    assert resp.json()["detail"]["code"] == "USER_EMAIL_CONFLICT"
+    assert resp.json()["error"]["code"] == "USER_EMAIL_CONFLICT"
 
 
 @pytest.mark.asyncio

@@ -34,6 +34,8 @@ from sqlalchemy import JSON  # tipo genérico que funciona en todos los motores
 ```
 
 **Sin máquina de estados en transiciones de ejecuciones.**
+> ✅ **RESUELTO (2026-06-10)** — change `dal-execution-state-machine`: máquina de estados explícita en `app/repositories/executions.py` (`queued→running`, `running→completed`, `running→failed`, `queued→cancelled`; los tres últimos terminales e inmutables). Cualquier otra transición — incluida misma→misma — responde 409 `INVALID_STATE_TRANSITION` con el estado actual y el solicitado en el mensaje. Aplicada con compare-and-set atómico en el `WHERE` del `UPDATE` (sin races bajo concurrencia, portable entre motores), con desambiguación 404/409 y excepciones tipadas en lugar de `ValueError`. Además, `output_data` y `cost` solo se aceptan en transiciones terminales (400 `INVALID_PAYLOAD_FOR_TRANSITION` en caso contrario). Verificado: 92/92 tests; spec publicada en `openspec/specs/dal-execution-lifecycle/`.
+
 El endpoint `PATCH /v1/executions/{id}/status` acepta cualquier transición. Puedes marcar una ejecución `failed` como `running` de nuevo. En un sistema de gobernanza bancario, el historial de ejecuciones es un registro de auditoría — una transición inválida lo contamina. Las transiciones permitidas deben ser explícitas:
 
 ```
@@ -58,6 +60,7 @@ Index("idx_executions_completed_at", executions.c.completed_at)
 ```
 
 **El campo `cost` y `model_used` en ejecuciones nunca se populan.** El schema los define, el DAL los almacena, pero el PATCH de status solo recibe `status` y `output_data`. Falta el mecanismo: el worker debería enviarlos en el PATCH cuando la ejecución se completa.
+> ✅ **RESUELTO en el DAL (2026-06-10)** — change `dal-execution-state-machine`: el `PATCH /status` acepta `cost` (Decimal opcional), solo en transiciones a estado terminal. `model_used` ya se recibía en el `POST` de creación. Pendiente del lado router-ai: calcular y reportar el coste (ver «Sin modelo de costes» más abajo).
 
 ---
 
@@ -105,15 +108,17 @@ Si despliegas dos instancias del router-ai (lo que harás en producción para HA
 |---|---|---|
 | DAL — `create_all` en producción | ✅ Resuelto (2026-06-10) | No — gate de migraciones + roles separados |
 | DAL — JSONB no portable | ✅ Resuelto (2026-06-10) | No — tipos portables en `types.py` |
-| DAL — Máquina de estados en executions | 🔴 Crítico | Sí (auditoría) |
+| DAL — Máquina de estados en executions | ✅ Resuelto (2026-06-10) | No — CAS atómico + 409 `INVALID_STATE_TRANSITION` |
 | Router-AI — Docs sin auth en producción | 🔴 Crítico | Sí |
 | Router-AI — Rate limiter en memoria | 🔴 Crítico | Sí (si escala) |
 | Router-AI — ASR ausente | 🟡 Importante | No (feature pendiente) |
 | DAL — Hard delete en prompts | 🟡 Importante | No |
 | DAL — Filtros de auditoría en executions | 🟡 Importante | No |
 | Router-AI — Healthcheck lento | 🟡 Importante | No |
-| Ambos — Campo `cost` sin poblar | 🟡 Importante | No |
+| Ambos — Campo `cost` sin poblar | ✅ Resuelto en DAL (2026-06-10) | No — `cost` aceptado en transiciones terminales; pendiente que router-ai lo reporte |
 
 Los tres críticos del DAL y los dos del router-ai son los que yo resolvería antes de conectar el backend. El resto puede ir en iteraciones posteriores.
 
 *Actualización 2026-06-10: dos de los tres críticos del DAL (`create_all` y JSONB no portable) están resueltos. Quedan pendientes: máquina de estados en executions, docs sin auth y rate limiter en memoria del router-ai.*
+
+*Actualización 2026-06-10 (2): resuelto el tercer crítico del DAL (cambio `dal-execution-state-machine`). Transiciones permitidas: `queued→running`, `running→completed`, `running→failed`, `queued→cancelled` (nuevo estado terminal); todo lo demás — incluida misma→misma — responde 409 `INVALID_STATE_TRANSITION`, aplicado con compare-and-set atómico en el `WHERE` del `UPDATE`. De paso queda resuelto en el DAL el 🟡 «campo `cost` sin poblar»: `PATCH /status` acepta `cost` (y `output_data`) solo en transiciones terminales. Quedan pendientes los dos críticos del router-ai: docs sin auth y rate limiter en memoria.*

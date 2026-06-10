@@ -127,6 +127,23 @@ async def _deactivate_all_in_tx(self, prompt_id: UUID) -> None:
     # No commit aquí — el commit lo hace create() al final
 ```
 
+### Máquina de estados de ejecuciones
+
+`executions.status` está gobernado por una máquina de estados explícita. Las únicas transiciones permitidas son:
+
+```
+queued ──▶ running ──▶ completed   (terminal)
+   │           └─────▶ failed      (terminal)
+   └─────▶ cancelled               (terminal)
+```
+
+- Toda ejecución nace en `queued` (vía `POST /v1/executions`); `queued` nunca es destino válido de un `PATCH`.
+- `completed`, `failed` y `cancelled` son terminales e inmutables. Un reintento es una **nueva ejecución**, nunca una resurrección de una `failed`.
+- Cualquier otra transición — incluida la de un estado a sí mismo — devuelve **409** con código `INVALID_STATE_TRANSITION` (el mensaje incluye el estado actual y el solicitado). No hay no-op idempotente: si un cliente reenvía un `PATCH` tras un timeout y recibe 409, debe verificar el estado real con `GET /v1/executions/{id}` en lugar de re-enviar el `PATCH`.
+- `output_data` y `cost` solo se aceptan en transiciones hacia estado terminal; en otro caso el endpoint responde **400** `INVALID_PAYLOAD_FOR_TRANSITION` sin aplicar la transición. En toda transición terminal el repositorio escribe `completed_at` (UTC).
+
+La transición se aplica con un *compare-and-set* atómico: el `WHERE` del `UPDATE` incluye los estados origen permitidos para el destino solicitado (`WHERE id = :id AND status IN (...)`), de modo que bajo concurrencia como máximo una de varias transiciones simultáneas tiene efecto — sin `SELECT ... FOR UPDATE`, portable entre motores. Si el `UPDATE` no afecta filas, un `SELECT` posterior desambigua entre **404** `NOT_FOUND` (la ejecución no existe) y **409** (existe pero la transición es inválida). El repositorio señaliza estos casos con excepciones tipadas (`ExecutionNotFound`, `InvalidStateTransition`, `InvalidPayloadForTransition` en `app/repositories/errors.py`) que el router mapea al envelope de error estándar.
+
 ### Middleware stack
 
 Los middlewares se registran en `main.py` en orden inverso a su ejecución (Starlette los apila):
@@ -411,7 +428,9 @@ Index("idx_prompts_owner_id",      prompts.c.owner_id)
 
 ### Invariantes de datos
 
-- `executions.completed_at` se setea automáticamente cuando el status pasa a `completed` o `failed`.
+- `executions.status` solo cambia según la máquina de estados (ver «Máquina de estados de ejecuciones»); los estados `completed`, `failed` y `cancelled` son terminales.
+- `executions.completed_at` se setea automáticamente cuando el status pasa a un estado terminal (`completed`, `failed` o `cancelled`).
+- `executions.output_data` y `executions.cost` solo se escriben en la transición a un estado terminal.
 - `prompt_versions.content` y `transcript_versions.content` son de solo inserción; nunca se actualizan.
 - Solo una versión por prompt puede tener `is_active=True` en cualquier momento.
 - `users.email` se almacena y busca en minúsculas (`func.lower()`) para búsqueda case-insensitive.

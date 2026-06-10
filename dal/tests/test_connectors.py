@@ -79,7 +79,7 @@ async def test_list_connectors_endpoint(client):
 async def test_get_connector_404(client):
     resp = await client.get(f"/v1/connectors/{uuid.uuid4()}")
     assert resp.status_code == 404
-    assert resp.json()["detail"]["code"] == "NOT_FOUND"
+    assert resp.json()["error"]["code"] == "NOT_FOUND"
 
 
 @pytest.mark.asyncio

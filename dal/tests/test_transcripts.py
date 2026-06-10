@@ -137,7 +137,7 @@ async def test_create_transcript_endpoint(client):
 async def test_get_transcript_404(client):
     resp = await client.get(f"/v1/transcripts/{uuid.uuid4()}")
     assert resp.status_code == 404
-    assert resp.json()["detail"]["code"] == "NOT_FOUND"
+    assert resp.json()["error"]["code"] == "NOT_FOUND"
 
 
 @pytest.mark.asyncio
