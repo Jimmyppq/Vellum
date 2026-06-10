@@ -23,6 +23,8 @@ else:
 ```
 
 **`JSONB` de PostgreSQL hardcodeado en schema.py.**
+> ✅ **RESUELTO (2026-06-10)** — change `dal-portable-column-types`: nuevo `app/models/types.py` con `PortableJSON()` (`JSON` genérico con variante `JSONB` en PostgreSQL y `CLOB` serializado en Oracle) y `PortableUUID()` (`sa.Uuid`, que también estaba hardcodeado como tipo de dialecto en todas las tablas). `schema.py` y la migración inicial ya no importan `sqlalchemy.dialects`; un test de autogenerate con diff vacío garantiza que el DDL desplegado en PostgreSQL no cambió, y un test anti-regresión por AST impide reintroducir tipos de dialecto. Verificado: 76/76 tests, DDL compilable en oracle/mssql/mysql/sqlite.
+
 El developer guide lo reconoce honestamente: *"Al migrar a otro motor, estos campos son el único punto de adaptación."* Pero en la práctica, `sqlalchemy.dialects.postgresql.JSONB` importado directamente en `schema.py` hace que el módulo falle al importar con cualquier motor que no sea PostgreSQL. El provider de Oracle o SQL-Server nunca podría arrancar con este schema. La solución es usar un tipo genérico que se resuelva según el motor activo:
 
 ```python
@@ -101,8 +103,8 @@ Si despliegas dos instancias del router-ai (lo que harás en producción para HA
 
 | Componente | Estado | Bloqueante para staging |
 |---|---|---|
-| DAL — `create_all` en producción | 🔴 Crítico | Sí |
-| DAL — JSONB no portable | 🔴 Crítico | Sí, para Oracle/SQL-Server |
+| DAL — `create_all` en producción | ✅ Resuelto (2026-06-10) | No — gate de migraciones + roles separados |
+| DAL — JSONB no portable | ✅ Resuelto (2026-06-10) | No — tipos portables en `types.py` |
 | DAL — Máquina de estados en executions | 🔴 Crítico | Sí (auditoría) |
 | Router-AI — Docs sin auth en producción | 🔴 Crítico | Sí |
 | Router-AI — Rate limiter en memoria | 🔴 Crítico | Sí (si escala) |
@@ -113,3 +115,5 @@ Si despliegas dos instancias del router-ai (lo que harás en producción para HA
 | Ambos — Campo `cost` sin poblar | 🟡 Importante | No |
 
 Los tres críticos del DAL y los dos del router-ai son los que yo resolvería antes de conectar el backend. El resto puede ir en iteraciones posteriores.
+
+*Actualización 2026-06-10: dos de los tres críticos del DAL (`create_all` y JSONB no portable) están resueltos. Quedan pendientes: máquina de estados en executions, docs sin auth y rate limiter en memoria del router-ai.*

@@ -80,9 +80,14 @@ class BaseProvider(ABC):
 
 ### SQLAlchemy Core (no ORM declarativo)
 
-El esquema usa `sqlalchemy.Table` + `MetaData` en lugar de `declarative_base()`. Esto es una decisión deliberada: SQLAlchemy Core es independiente del motor y garantiza que las queries generadas no usen features propietarios de ningún DBMS. Todos los campos de tiempo usan `DateTime(timezone=True)` y todos los IDs usan `UUID(as_uuid=True)`, tipos estándar de SQLAlchemy.
+El esquema usa `sqlalchemy.Table` + `MetaData` en lugar de `declarative_base()`. Esto es una decisión deliberada: SQLAlchemy Core es independiente del motor y garantiza que las queries generadas no usen features propietarios de ningún DBMS. Todos los campos de tiempo usan `DateTime(timezone=True)`.
 
-Los campos de estructura genuinamente variable (`input_data`, `output_data`, `config`, `system_config.value`) usan `JSONB` de `sqlalchemy.dialects.postgresql`. Al migrar a otro motor, estos campos son el único punto de adaptación.
+Los tipos que varían por motor viven en `app/models/types.py`, el **único módulo del DAL autorizado a importar de `sqlalchemy.dialects`** (regla verificada por `tests/test_portable_types.py`):
+
+- `PortableUUID()` — todos los IDs. Resuelve a `UUID` nativo en PostgreSQL, `UNIQUEIDENTIFIER` en SQL-Server y `CHAR(32)` en Oracle/MySQL; en Python siempre es `uuid.UUID`.
+- `PortableJSON()` — los campos de estructura genuinamente variable (`input_data`, `output_data`, `config`, `system_config.value`). Resuelve a `JSONB` en PostgreSQL (preserva operadores e índices GIN del esquema desplegado), `CLOB` con serialización JSON en Oracle y el tipo JSON del dialecto en el resto.
+
+`schema.py` y las migraciones de Alembic consumen estos tipos y no importan dialectos directamente. Al migrar a otro motor no hay ningún punto de adaptación en el esquema: la resolución es automática.
 
 ### Patrón Repository
 
@@ -605,8 +610,7 @@ alembic upgrade head --sql > migration_preview.sql
 ### Reglas para migraciones
 
 - Cada migration debe implementar **upgrade** y **downgrade**.
-- Nunca usar tipos propietarios del motor en las migraciones (usar tipos SQLAlchemy estándar).
-- Los campos `JSONB` son el único punto de adaptación al migrar a otro motor — documentarlo explícitamente en el `downgrade`.
+- Nunca usar tipos propietarios del motor en las migraciones: usar `PortableJSON()`/`PortableUUID()` de `app.models.types` o tipos SQLAlchemy estándar. El test anti-regresión (`tests/test_portable_types.py`) falla si una migración importa `sqlalchemy.dialects`.
 - Las tablas de versiones (`prompt_versions`, `transcript_versions`) nunca reciben `UPDATE` en sus columnas `content` — las migraciones que las toquen son siempre `ADD COLUMN` o `ALTER COLUMN`, nunca backfills.
 
 ---
@@ -618,6 +622,6 @@ alembic upgrade head --sql > migration_preview.sql
 3. Implementar `health_check()` capturando todas las excepciones y retornando `bool`.
 4. Registrar el motor en `providers/router.py` con su nombre en `DB_ENGINE`.
 5. Agregar el driver en `requirements.txt`.
-6. Verificar que los campos `JSONB` del esquema tienen equivalente en el nuevo motor (son el único punto de adaptación).
+6. Verificar la resolución de tipos en el nuevo motor: `tests/test_portable_types.py` ya compila el DDL contra los dialectos soportados; si el motor necesita un tipo específico, añadir la variante en `app/models/types.py` (nunca en `schema.py` ni en migraciones).
 
 No es necesario modificar ningún repositorio, router ni middleware.

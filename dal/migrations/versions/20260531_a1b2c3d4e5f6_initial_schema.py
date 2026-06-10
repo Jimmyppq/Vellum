@@ -7,7 +7,8 @@ Create Date: 2026-05-31
 """
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
+
+from app.models.types import PortableJSON, PortableUUID
 
 revision = "a1b2c3d4e5f6"
 down_revision = None
@@ -20,7 +21,7 @@ def upgrade() -> None:
 
     op.create_table(
         "users",
-        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("id", PortableUUID(), nullable=False),
         sa.Column("username", sa.String(length=255), nullable=False),
         sa.Column("email", sa.String(length=255), nullable=False),
         sa.Column("is_active", sa.Boolean(), nullable=False),
@@ -33,7 +34,7 @@ def upgrade() -> None:
 
     op.create_table(
         "roles",
-        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("id", PortableUUID(), nullable=False),
         sa.Column("name", sa.String(length=255), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
@@ -42,7 +43,7 @@ def upgrade() -> None:
 
     op.create_table(
         "connectors",
-        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("id", PortableUUID(), nullable=False),
         sa.Column("type", sa.String(length=100), nullable=False),
         sa.Column("name", sa.String(length=255), nullable=False),
         sa.Column("is_active", sa.Boolean(), nullable=False),
@@ -53,7 +54,7 @@ def upgrade() -> None:
     op.create_table(
         "system_config",
         sa.Column("key", sa.String(length=255), nullable=False),
-        sa.Column("value", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+        sa.Column("value", PortableJSON(), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
         sa.PrimaryKeyConstraint("key"),
     )
@@ -62,8 +63,8 @@ def upgrade() -> None:
 
     op.create_table(
         "user_roles",
-        sa.Column("user_id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("role_id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("user_id", PortableUUID(), nullable=False),
+        sa.Column("role_id", PortableUUID(), nullable=False),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"]),
         sa.ForeignKeyConstraint(["role_id"], ["roles.id"]),
         sa.PrimaryKeyConstraint("user_id", "role_id"),
@@ -71,10 +72,10 @@ def upgrade() -> None:
 
     op.create_table(
         "prompts",
-        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("id", PortableUUID(), nullable=False),
         sa.Column("name", sa.String(length=255), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
-        sa.Column("owner_id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("owner_id", PortableUUID(), nullable=False),
         sa.Column("status", sa.String(length=50), nullable=False),
         sa.Column("visibility", sa.String(length=50), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
@@ -85,10 +86,10 @@ def upgrade() -> None:
 
     op.create_table(
         "transcripts",
-        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("id", PortableUUID(), nullable=False),
         sa.Column("name", sa.String(length=255), nullable=False),
         sa.Column("media_url", sa.String(length=1024), nullable=True),
-        sa.Column("owner_id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("owner_id", PortableUUID(), nullable=False),
         sa.Column("status", sa.String(length=50), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
@@ -98,9 +99,9 @@ def upgrade() -> None:
 
     op.create_table(
         "connector_configs",
-        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("connector_id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("config", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+        sa.Column("id", PortableUUID(), nullable=False),
+        sa.Column("connector_id", PortableUUID(), nullable=False),
+        sa.Column("config", PortableJSON(), nullable=False),
         sa.Column("encrypted", sa.Boolean(), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.ForeignKeyConstraint(["connector_id"], ["connectors.id"]),
@@ -111,12 +112,12 @@ def upgrade() -> None:
 
     op.create_table(
         "prompt_versions",
-        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("prompt_id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("id", PortableUUID(), nullable=False),
+        sa.Column("prompt_id", PortableUUID(), nullable=False),
         sa.Column("version_number", sa.Integer(), nullable=False),
         sa.Column("content", sa.Text(), nullable=False),
         sa.Column("change_log", sa.Text(), nullable=True),
-        sa.Column("created_by", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("created_by", PortableUUID(), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("is_active", sa.Boolean(), nullable=False),
         sa.ForeignKeyConstraint(["prompt_id"], ["prompts.id"]),
@@ -126,12 +127,12 @@ def upgrade() -> None:
 
     op.create_table(
         "transcript_versions",
-        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("transcript_id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("id", PortableUUID(), nullable=False),
+        sa.Column("transcript_id", PortableUUID(), nullable=False),
         sa.Column("version_number", sa.Integer(), nullable=False),
         sa.Column("content", sa.Text(), nullable=False),
         sa.Column("change_log", sa.Text(), nullable=True),
-        sa.Column("created_by", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("created_by", PortableUUID(), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("is_active", sa.Boolean(), nullable=False),
         sa.ForeignKeyConstraint(["transcript_id"], ["transcripts.id"]),
@@ -143,13 +144,13 @@ def upgrade() -> None:
 
     op.create_table(
         "executions",
-        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("prompt_id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("version_id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("transcript_id", postgresql.UUID(as_uuid=True), nullable=True),
-        sa.Column("executed_by", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("input_data", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-        sa.Column("output_data", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+        sa.Column("id", PortableUUID(), nullable=False),
+        sa.Column("prompt_id", PortableUUID(), nullable=False),
+        sa.Column("version_id", PortableUUID(), nullable=False),
+        sa.Column("transcript_id", PortableUUID(), nullable=True),
+        sa.Column("executed_by", PortableUUID(), nullable=False),
+        sa.Column("input_data", PortableJSON(), nullable=False),
+        sa.Column("output_data", PortableJSON(), nullable=True),
         sa.Column("status", sa.String(length=50), nullable=False),
         sa.Column("model_used", sa.String(length=255), nullable=True),
         sa.Column("cost", sa.Numeric(precision=10, scale=6), nullable=True),
