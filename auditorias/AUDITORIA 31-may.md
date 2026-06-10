@@ -9,6 +9,8 @@ La decisión de usar SQLAlchemy Core (no ORM declarativo) es correcta y consiste
 ### 🔴 Crítico
 
 **`metadata.create_all()` en el lifespan de arranque.**
+> ✅ **RESUELTO (2026-06-10)** — change `dal-schema-migration-gate`: `verify_schema_version()` fail-fast en todos los entornos, contenedor efímero `dal-migrate` como único mecanismo DDL, y roles de BD separados (`vellum_app` sin DDL / `vellum_migrator`). `create_all` quedó confinado a fixtures de tests.
+
 En producción esto es peligroso. El DAL está modificando el esquema de base de datos cada vez que arranca un contenedor. En un entorno bancario, el esquema lo gestiona Alembic con control explícito y revisión humana — nunca la aplicación en caliente. Un reinicio de contenedor en producción no debería poder alterar la base de datos. La solución: `create_all` solo en entorno `dev`, y en staging/prod el arranque falla si el esquema no está migrado previamente.
 
 ```python

@@ -14,8 +14,13 @@ services:
       POSTGRES_DB: vellum
       POSTGRES_USER: vellum_user
       POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+      DAL_APP_PASSWORD: ${DAL_APP_PASSWORD:-changeme_app}
+      DAL_MIGRATOR_PASSWORD: ${DAL_MIGRATOR_PASSWORD:-changeme_migrator}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Solo se ejecuta al crear el volumen; en BDs existentes aplicar a mano
+      # (ver docs/DAL-developer-guide.md).
+      - ./infra/postgres/init-roles.sh:/docker-entrypoint-initdb.d/01-roles.sh:ro
     networks:
       - vellum-internal
     healthcheck:
@@ -24,11 +29,35 @@ services:
       timeout: 5s
       retries: 5
 
+  # Contenedor efímero de migraciones: único mecanismo que aplica DDL.
+  # No arranca con `docker compose up` (profile); invocación explícita:
+  #   docker compose run --rm dal-migrate
+  dal-migrate:
+    build:
+      context: ./dal
+      dockerfile: Dockerfile
+    command: ["alembic", "upgrade", "head"]
+    env_file: ./dal/.env
+    environment:
+      # Credenciales del rol con DDL — solo este contenedor las recibe.
+      DB_USER: vellum_migrator
+      DB_PASSWORD: ${DAL_MIGRATOR_PASSWORD:-changeme_migrator}
+    profiles: ["migrate"]
+    networks:
+      - vellum-internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   dal:
     build:
       context: ./dal
       dockerfile: Dockerfile
     env_file: ./dal/.env
+    environment:
+      # El servicio se conecta SIN privilegios DDL (garantía estructural).
+      DB_USER: vellum_app
+      DB_PASSWORD: ${DAL_APP_PASSWORD:-changeme_app}
     ports: []
     networks:
       - vellum-internal

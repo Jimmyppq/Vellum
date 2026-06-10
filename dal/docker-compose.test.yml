@@ -9,6 +9,10 @@ services:
       POSTGRES_DB: vellum_test
       POSTGRES_USER: vellum_user
       POSTGRES_PASSWORD: changeme
+      DAL_APP_PASSWORD: changeme_app
+      DAL_MIGRATOR_PASSWORD: changeme_migrator
+    volumes:
+      - ../infra/postgres/init-roles.sh:/docker-entrypoint-initdb.d/01-roles.sh:ro
     networks:
       - vellum-test
     healthcheck:
@@ -35,6 +39,7 @@ services:
       MTLS_ENABLED: "false"
       INTERNAL_SERVICE_TOKEN: test-token
       LOG_LEVEL: WARNING
+      DAL_APP_PASSWORD: changeme_app
     networks:
       - vellum-test
     depends_on:

@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.config import configure_logging, get_settings
-from app.database import init_db
+from app.database import verify_schema_version
 from app.middleware.internal_auth import InternalAuthMiddleware, warn_if_token_missing
 from app.middleware.trace_id import TraceIdMiddleware
 
@@ -15,11 +15,10 @@ configure_logging(settings.LOG_LEVEL)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     warn_if_token_missing()
-    if settings.ENV == "dev":
-        # In dev, auto-create tables for convenience.
-        # In staging/prod schema changes go through Alembic migrations only —
-        # never through the application on startup.
-        await init_db()
+    # The service never runs DDL in any environment: migrations are applied
+    # exclusively by the dal-migrate ephemeral container (alembic upgrade head).
+    # Startup aborts if the schema is not at the Alembic head.
+    await verify_schema_version()
     yield
 
 

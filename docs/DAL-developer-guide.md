@@ -208,27 +208,31 @@ main.py  lifespan()
     │       Lee MTLS_ENABLED e INTERNAL_SERVICE_TOKEN
     │       Si ambos están vacíos → WARNING en log
     │
-    └─► init_db()                        database.py
+    └─► verify_schema_version()          database.py
             │
-            └─► get_provider(settings)   providers/router.py
-                    │
-                    │  Lee DB_ENGINE (variable de entorno)
-                    │
-                    ├─ "postgres" ──► PostgresProvider(settings)   providers/postgres.py
-                    │                    create_async_engine(
-                    │                      "postgresql+asyncpg://host:port/db"
-                    │                      pool_size=DB_POOL_SIZE
-                    │                      max_overflow=DB_MAX_OVERFLOW
-                    │                    )
-                    │
-                    └─ otro valor ──► ValueError  (servicio no arranca)
-
-            engine guardado en _engine (módulo database.py)
-            async_session_factory = async_sessionmaker(_engine)
-            metadata.create_all(engine)  →  crea tablas si no existen
+            │  (el engine ya fue creado al importar el módulo:)
+            │   get_provider(settings)    providers/router.py
+            │       │  Lee DB_ENGINE (variable de entorno)
+            │       ├─ "postgres" ──► PostgresProvider(settings)   providers/postgres.py
+            │       │                    create_async_engine(
+            │       │                      "postgresql+asyncpg://host:port/db"
+            │       │                      pool_size=DB_POOL_SIZE
+            │       │                      max_overflow=DB_MAX_OVERFLOW
+            │       │                    )
+            │       └─ otro valor ──► ValueError  (servicio no arranca)
+            │
+            ├─► Lee alembic_version de la BD (MigrationContext)
+            ├─► Lee el head de migrations/versions/ (ScriptDirectory)
+            │
+            ├─ BD no alcanzable ──────► RuntimeError  (servicio no arranca)
+            ├─ sin alembic_version ───► RuntimeError  "esquema no migrado"
+            ├─ revisión ≠ head ───────► RuntimeError  "revisión X, se esperaba Y"
+            └─ revisión == head ──────► arranque normal
 ```
 
 La decisión de qué DBMS usar se toma **una sola vez aquí**. Todos los requests posteriores reutilizan el mismo engine y pool de conexiones.
+
+El servicio **nunca ejecuta DDL en ningún entorno**: las tablas las crean exclusivamente las migraciones Alembic aplicadas por el contenedor efímero `dal-migrate` (ver [Gestión de esquema con Alembic](#gestión-de-esquema-con-alembic)). Si el esquema no está en el head, el arranque falla con un mensaje que indica el comando exacto a ejecutar.
 
 ---
 
@@ -418,7 +422,7 @@ Index("idx_prompts_owner_id",      prompts.c.owner_id)
 | `DB_HOST` | Host del servidor PostgreSQL | **Sí** | — |
 | `DB_PORT` | Puerto del servidor | No | `5432` |
 | `DB_NAME` | Nombre de la base de datos | **Sí** | — |
-| `DB_USER` | Usuario de la base de datos | **Sí** | — |
+| `DB_USER` | Usuario de la base de datos (`vellum_app` en el servicio; `vellum_migrator` en `dal-migrate` — ver [Roles de base de datos](#roles-de-base-de-datos)) | **Sí** | — |
 | `DB_PASSWORD` | Contraseña del usuario | **Sí** | — |
 | `DB_POOL_SIZE` | Tamaño del pool de conexiones | No | `10` |
 | `DB_MAX_OVERFLOW` | Conexiones extra permitidas sobre el pool | No | `20` |
@@ -444,13 +448,57 @@ cp dal/.env.example dal/.env
 ### Docker Compose (proyecto completo)
 
 ```bash
-# Desde la raíz del proyecto
-docker compose up -d postgres dal
+# Desde la raíz del proyecto — quickstart de dev:
+docker compose up -d postgres            # 1. BD (el init crea los roles)
+docker compose run --rm dal-migrate      # 2. Aplicar migraciones (alembic upgrade head)
+docker compose up -d dal                 # 3. Levantar el servicio
 ```
 
-El `docker-compose.yml` raíz define dos servicios:
-- `postgres` — imagen `postgres:15-alpine`, volumen nombrado `postgres_data`, red interna `vellum-internal`
-- `dal` — construido desde `dal/Dockerfile`, expuesto en el puerto `8002`, depende de `postgres`
+El paso 2 es **obligatorio también en dev**: el DAL no crea tablas al arrancar en ningún entorno y aborta si el esquema no está migrado al head de Alembic.
+
+El `docker-compose.yml` raíz define tres servicios:
+- `postgres` — imagen `postgres:15-alpine`, volumen nombrado `postgres_data`, red interna `vellum-internal`. Monta `infra/postgres/init-roles.sh` que aprovisiona los roles del DAL al crear el volumen.
+- `dal-migrate` — contenedor **efímero** (misma imagen que `dal`, `profiles: ["migrate"]`): ejecuta `alembic upgrade head` y termina. No arranca con `docker compose up`; solo con `docker compose run --rm dal-migrate`. Es el único componente con credenciales DDL.
+- `dal` — construido desde `dal/Dockerfile`, expuesto en el puerto `8002`, depende de `postgres`. Se conecta con el rol `vellum_app`, sin privilegios DDL.
+
+### Roles de base de datos
+
+La separación entre servicio y migraciones es **estructural**, a nivel de permisos de PostgreSQL — no solo de código:
+
+| Rol | Privilegios | Lo usa | Credenciales |
+|---|---|---|---|
+| `vellum_app` | `SELECT/INSERT/UPDATE/DELETE` sobre tablas, `USAGE` sobre secuencias. **Sin DDL** | Servicio `dal` | `DAL_APP_PASSWORD` |
+| `vellum_migrator` | DDL completo sobre el esquema `public` | Contenedor `dal-migrate` | `DAL_MIGRATOR_PASSWORD` |
+
+Aunque una regresión de código reintrodujera DDL en el servicio, PostgreSQL lo rechazaría con `permission denied`.
+
+Los roles se aprovisionan con `infra/postgres/init-roles.sh`, que incluye `ALTER DEFAULT PRIVILEGES` para que cada tabla nueva creada por una migración quede automáticamente accesible para `vellum_app`. El script es idempotente y se ejecuta automáticamente **solo al crear el volumen** de PostgreSQL. Sobre una base de datos ya existente debe aplicarse manualmente:
+
+```bash
+docker compose exec \
+  -e DAL_APP_PASSWORD -e DAL_MIGRATOR_PASSWORD \
+  postgres sh /docker-entrypoint-initdb.d/01-roles.sh
+```
+
+En entornos gestionados (staging/prod sin compose), el DBA aplica el script equivalente con `psql -f` usando una conexión de superusuario; las contraseñas provienen del Secret Manager.
+
+### Runbook de despliegue (staging/prod)
+
+Todo despliegue que incluya migraciones sigue esta secuencia, en orden y sin omitir pasos:
+
+1. **Gate de aprobación humana** — revisar las migraciones pendientes antes de aplicarlas. Para generar el SQL revisable sin tocar la BD: `alembic upgrade head --sql > migration_preview.sql`.
+2. **Aplicar migraciones** — `docker compose run --rm dal-migrate` (o el job equivalente del pipeline con manual approval). El contenedor termina con exit code 0 si todo se aplicó.
+3. **Desplegar/reiniciar el servicio DAL** — el arranque verifica que el esquema quedó en head; si el paso 2 se omitió, el despliegue falla de forma explícita e inmediata.
+
+**Rollback**: las migraciones son reversibles por regla. Para volver a una revisión anterior:
+
+```bash
+docker compose run --rm dal-migrate alembic downgrade <revision>
+# o un paso atrás:
+docker compose run --rm dal-migrate alembic downgrade -1
+```
+
+Tras el downgrade hay que desplegar la versión del código cuyo head coincida con esa revisión — de lo contrario el DAL no arrancará (el gate detecta la discrepancia en ambas direcciones).
 
 ### Dockerfile
 
@@ -501,7 +549,7 @@ El patrón `join_transaction_mode="create_savepoint"` permite que los repositori
 
 ## Gestión de esquema con Alembic
 
-El esquema de base de datos en entornos `staging` y `prod` **nunca** es modificado por la aplicación en caliente. Todo cambio de DDL pasa por Alembic con revisión humana explícita.
+El esquema de base de datos **nunca** es modificado por la aplicación en caliente, en ningún entorno. Todo cambio de DDL pasa por Alembic con revisión humana explícita, aplicado por el contenedor efímero `dal-migrate` con el rol `vellum_migrator`. El servicio verifica en arranque que el esquema está en el head (`verify_schema_version()`) y aborta si no lo está.
 
 ### Estructura
 
@@ -515,15 +563,14 @@ dal/
         └── 20260531_a1b2c3d4e5f6_initial_schema.py
 ```
 
-### Aplicar migraciones (pipeline CD)
+### Aplicar migraciones
 
 ```bash
-# Dentro del contenedor dal, antes de levantar uvicorn:
-cd /app
-alembic upgrade head
+# En cualquier entorno — contenedor efímero, único mecanismo de DDL:
+docker compose run --rm dal-migrate
 ```
 
-En `ENV=dev` el lifespan llama `metadata.create_all` para conveniencia local. En `staging`/`prod` el lifespan no toca el DDL — solo `alembic upgrade head` en el pipeline lo hace.
+El lifespan del servicio no toca el DDL en ningún entorno (en tests, los fixtures usan `create_all` sobre la BD efímera de test — ese es el único uso legítimo). Todo cambio en `app/models/schema.py` **debe** ir acompañado de su migración Alembic; de lo contrario el DAL detectará el desfase en el siguiente arranque.
 
 ### Crear una nueva migración
 
