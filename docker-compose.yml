@@ -1,0 +1,42 @@
+version: "3.9"
+
+networks:
+  vellum-internal:
+    driver: bridge
+
+volumes:
+  postgres_data:
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: vellum
+      POSTGRES_USER: vellum_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - vellum-internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vellum_user -d vellum"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  dal:
+    build:
+      context: ./dal
+      dockerfile: Dockerfile
+    env_file: ./dal/.env
+    ports: []
+    networks:
+      - vellum-internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8002/health')\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3

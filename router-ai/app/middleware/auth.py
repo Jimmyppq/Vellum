@@ -4,7 +4,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 from app.core.auth import verify_api_key
 
-EXCLUDED_PATHS = {"/v1/health"}
+EXCLUDED_PATHS = {"/v1/health", "/docs", "/openapi.json", "/redoc"}
 
 
 class APIKeyMiddleware(BaseHTTPMiddleware):

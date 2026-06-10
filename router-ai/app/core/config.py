@@ -17,8 +17,8 @@ class Settings(BaseSettings):
     deepseek_api_key: SecretStr | None = None
     google_api_key: SecretStr | None = None
     deepseek_base_url: str = "https://api.deepseek.com/v1"
-    ollama_base_url: str = "http://localhost:11434"
-    lmstudio_base_url: str = "http://localhost:1234/v1"
+    ollama_base_url: str | None = None
+    lmstudio_base_url: str | None = None
 
     # Logging
     log_level: str = "INFO"
