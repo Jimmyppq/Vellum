@@ -50,6 +50,8 @@ prompts = Table(
     Column("owner_id", PortableUUID(), ForeignKey("users.id"), nullable=False),
     Column("status", String(50), nullable=False, default="draft"),
     Column("visibility", String(50), nullable=False, default="private"),
+    Column("is_deleted", Boolean, nullable=False, default=False),
+    Column("deleted_at", DateTime(timezone=True), nullable=True),
     Column("created_at", DateTime(timezone=True), nullable=False),
     Column("updated_at", DateTime(timezone=True), nullable=False),
 )
@@ -75,6 +77,8 @@ transcripts = Table(
     Column("media_url", String(1024)),
     Column("owner_id", PortableUUID(), ForeignKey("users.id"), nullable=False),
     Column("status", String(50), nullable=False),
+    Column("is_deleted", Boolean, nullable=False, default=False),
+    Column("deleted_at", DateTime(timezone=True), nullable=True),
     Column("created_at", DateTime(timezone=True), nullable=False),
     Column("updated_at", DateTime(timezone=True), nullable=False),
 )

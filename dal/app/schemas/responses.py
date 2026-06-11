@@ -43,6 +43,8 @@ class PromptResponse(BaseModel):
     owner_id: UUID
     status: str
     visibility: str
+    is_deleted: bool
+    deleted_at: datetime | None
     created_at: datetime
     updated_at: datetime
 
@@ -88,6 +90,8 @@ class TranscriptResponse(BaseModel):
     media_url: str | None
     owner_id: UUID
     status: str
+    is_deleted: bool
+    deleted_at: datetime | None
     created_at: datetime
     updated_at: datetime
 

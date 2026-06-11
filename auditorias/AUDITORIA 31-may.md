@@ -48,6 +48,7 @@ running → failed
 ### 🟡 Mejoras importantes
 
 **Hard delete en prompts.** El endpoint `DELETE /v1/prompts/{id}` elimina físicamente. Si hay ejecuciones asociadas, se rompe la cadena de auditoría. En banca necesitas soft delete: campo `deleted_at TIMESTAMP` + `is_deleted BOOLEAN`. Un prompt con ejecuciones no debería poder eliminarse — solo deprecarse.
+> ✅ **RESUELTO (2026-06-11)** — change `dal-prompt-soft-delete`: eliminado el borrado físico (el `repo.delete` ni siquiera estaba expuesto por HTTP y habría roto las FKs). `DELETE /v1/prompts/{id}` hace soft delete (`is_deleted` + `deleted_at`, migración Alembic reversible) solo si el prompt no tiene ejecuciones; con ejecuciones responde 409 `PROMPT_HAS_EXECUTIONS` indicando la deprecación como camino. La condición va en el `WHERE` del `UPDATE` (`NOT EXISTS`), atómica y portable. Las lecturas excluyen soft-deleted por defecto (`include_deleted` disponible para auditoría; el backend decide quién lo usa); sin restore por API. Cubre también **transcripts** (mismo patrón, 409 `TRANSCRIPT_HAS_EXECUTIONS`) y de paso cierra en prompts el mismo defecto de máquina de estados que tenía executions: `PATCH /status` solo admite `draft→approved`, `approved→deprecated`, `deprecated→approved`; el resto 409 `INVALID_STATE_TRANSITION`. Verificado: 108/108 tests, incluida migración upgrade+downgrade.
 
 **Filtros insuficientes en ejecuciones.** `GET /v1/executions` solo filtra por `prompt_id`. Para una auditoría bancaria necesitas: `executed_by`, `status`, `created_at` (rango), `transcript_id`. Sin estos filtros, cualquier consulta de auditoría requiere un full table scan o hacerla fuera del DAL.
 
@@ -112,7 +113,7 @@ Si despliegas dos instancias del router-ai (lo que harás en producción para HA
 | Router-AI — Docs sin auth en producción | 🔴 Crítico | Sí |
 | Router-AI — Rate limiter en memoria | 🔴 Crítico | Sí (si escala) |
 | Router-AI — ASR ausente | 🟡 Importante | No (feature pendiente) |
-| DAL — Hard delete en prompts | 🟡 Importante | No |
+| DAL — Hard delete en prompts | ✅ Resuelto (2026-06-11) | No — soft delete + 409 con ejecuciones (también transcripts) |
 | DAL — Filtros de auditoría en executions | 🟡 Importante | No |
 | Router-AI — Healthcheck lento | 🟡 Importante | No |
 | Ambos — Campo `cost` sin poblar | ✅ Resuelto en DAL (2026-06-10) | No — `cost` aceptado en transiciones terminales; pendiente que router-ai lo reporte |
@@ -122,3 +123,5 @@ Los tres críticos del DAL y los dos del router-ai son los que yo resolvería an
 *Actualización 2026-06-10: dos de los tres críticos del DAL (`create_all` y JSONB no portable) están resueltos. Quedan pendientes: máquina de estados en executions, docs sin auth y rate limiter en memoria del router-ai.*
 
 *Actualización 2026-06-10 (2): resuelto el tercer crítico del DAL (cambio `dal-execution-state-machine`). Transiciones permitidas: `queued→running`, `running→completed`, `running→failed`, `queued→cancelled` (nuevo estado terminal); todo lo demás — incluida misma→misma — responde 409 `INVALID_STATE_TRANSITION`, aplicado con compare-and-set atómico en el `WHERE` del `UPDATE`. De paso queda resuelto en el DAL el 🟡 «campo `cost` sin poblar»: `PATCH /status` acepta `cost` (y `output_data`) solo en transiciones terminales. Quedan pendientes los dos críticos del router-ai: docs sin auth y rate limiter en memoria.*
+
+*Actualización 2026-06-11: resuelto el 🟡 «Hard delete en prompts» (cambio `dal-prompt-soft-delete`): soft delete de prompts y transcripts condicionado a no tener ejecuciones, sin restore por API, con `include_deleted` para auditoría, y máquina de estados de prompts (`draft→approved↔deprecated`).*

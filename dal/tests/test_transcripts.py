@@ -69,8 +69,10 @@ async def test_delete_transcript(db_session):
     user = await _create_user(db_session)
     t = await _create_transcript(db_session, user.id)
     repo = TranscriptsRepository(db_session)
-    assert await repo.delete(t.id) is True
+    deleted = await repo.soft_delete(t.id)
+    assert deleted.is_deleted is True
     assert await repo.get_by_id(t.id) is None
+    assert (await repo.get_by_id(t.id, include_deleted=True)) is not None
 
 
 @pytest.mark.asyncio

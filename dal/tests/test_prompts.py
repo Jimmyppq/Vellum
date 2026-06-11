@@ -2,6 +2,7 @@ import uuid
 
 import pytest
 
+from app.repositories.errors import InvalidStateTransition
 from app.repositories.prompt_versions import PromptVersionsRepository
 from app.repositories.prompts import PromptsRepository
 from app.repositories.users import UsersRepository
@@ -56,7 +57,7 @@ async def test_update_prompt_status_invalid_raises(db_session):
     user = await _create_user(db_session)
     repo = PromptsRepository(db_session)
     prompt = await repo.create(PromptCreate(name="Status Test", owner_id=user.id))
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidStateTransition):
         await repo.update_status(prompt.id, "invalid_status")
 
 
@@ -65,9 +66,11 @@ async def test_delete_prompt(db_session):
     user = await _create_user(db_session)
     repo = PromptsRepository(db_session)
     prompt = await repo.create(PromptCreate(name="To Delete", owner_id=user.id))
-    deleted = await repo.delete(prompt.id)
-    assert deleted is True
+    deleted = await repo.soft_delete(prompt.id)
+    assert deleted.is_deleted is True
+    assert deleted.deleted_at is not None
     assert await repo.get_by_id(prompt.id) is None
+    assert (await repo.get_by_id(prompt.id, include_deleted=True)) is not None
 
 
 @pytest.mark.asyncio

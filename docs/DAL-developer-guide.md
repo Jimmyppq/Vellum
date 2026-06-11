@@ -144,6 +144,26 @@ queued ──▶ running ──▶ completed   (terminal)
 
 La transición se aplica con un *compare-and-set* atómico: el `WHERE` del `UPDATE` incluye los estados origen permitidos para el destino solicitado (`WHERE id = :id AND status IN (...)`), de modo que bajo concurrencia como máximo una de varias transiciones simultáneas tiene efecto — sin `SELECT ... FOR UPDATE`, portable entre motores. Si el `UPDATE` no afecta filas, un `SELECT` posterior desambigua entre **404** `NOT_FOUND` (la ejecución no existe) y **409** (existe pero la transición es inválida). El repositorio señaliza estos casos con excepciones tipadas (`ExecutionNotFound`, `InvalidStateTransition`, `InvalidPayloadForTransition` en `app/repositories/errors.py`) que el router mapea al envelope de error estándar.
 
+### Máquina de estados de prompts
+
+`prompts.status` está gobernado por la misma mecánica CAS que executions, con un ciclo no terminal:
+
+```
+draft ──▶ approved ◀──▶ deprecated
+```
+
+- Todo prompt nace en `draft`; `draft` nunca es destino válido de un `PATCH` (iterar es crear una versión nueva, no degradar el prompt).
+- `deprecated → approved` es legal: un prompt deprecado puede reactivarse.
+- Cualquier otra transición — incluida misma→misma — devuelve **409** `INVALID_STATE_TRANSITION`.
+
+### Soft delete de prompts y transcripts
+
+No existe borrado físico de prompts ni transcripts: `DELETE /v1/prompts/{id}` y `DELETE /v1/transcripts/{id}` marcan `is_deleted=true` + `deleted_at` (UTC). Reglas:
+
+- Solo se puede eliminar una entidad **sin ejecuciones asociadas**; en caso contrario el endpoint responde **409** `PROMPT_HAS_EXECUTIONS` / `TRANSCRIPT_HAS_EXECUTIONS` (para prompts en uso, el camino es deprecarlos). La condición vive en el `WHERE` del `UPDATE` (`NOT EXISTS` sobre `executions`), en una sola sentencia atómica y portable.
+- No hay restore por API: de cara al usuario la eliminación es definitiva (el frontend lo avisa); la fila se conserva solo como salvaguarda de auditoría.
+- Las lecturas excluyen los soft-deleted por defecto; `include_deleted=true` (query param en GET por id y listados) los muestra — el backend decide quién puede usarlo. Un `DELETE` o `PATCH /status` sobre un soft-deleted responde **404**, igual que sus subrecursos de versiones (que no aceptan `include_deleted`).
+
 ### Middleware stack
 
 Los middlewares se registran en `main.py` en orden inverso a su ejecución (Starlette los apila):
@@ -434,6 +454,8 @@ Index("idx_prompts_owner_id",      prompts.c.owner_id)
 - `prompt_versions.content` y `transcript_versions.content` son de solo inserción; nunca se actualizan.
 - Solo una versión por prompt puede tener `is_active=True` en cualquier momento.
 - `users.email` se almacena y busca en minúsculas (`func.lower()`) para búsqueda case-insensitive.
+- `prompts.status` solo cambia según su máquina de estados (`draft → approved ↔ deprecated`); `draft` nunca es destino.
+- `prompts` y `transcripts` nunca se borran físicamente: `is_deleted`/`deleted_at` (soft delete), solo posible sin ejecuciones asociadas.
 
 ---
 
