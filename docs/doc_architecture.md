@@ -176,7 +176,7 @@ Principio de aislamiento de fallos: si un conector falla, la ejecución principa
 
 | Componente | Tecnología | Rol |
 |---|---|---|
-| Cache / Cola | Redis | Prompts frecuentes + task queue para workers |
+| Cache / Cola | Redis | Prompts frecuentes + task queue para workers + contadores de rate limiting del router-ai (compartidos entre réplicas) |
 | Object Storage | S3 / MinIO | Archivos binarios (audios, vídeos de reuniones) |
 | Base de datos principal | PostgreSQL | Fuente de verdad del sistema |
 | Workers asíncronos | Celery + Redis | ASR, ejecuciones pesadas, conectores |

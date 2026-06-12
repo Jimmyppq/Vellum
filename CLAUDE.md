@@ -352,7 +352,7 @@ Códigos HTTP obligatorios:
 |---|---|---|
 | `frontend` | `gateway` | Cualquier servicio interno directamente |
 | `backend` | `router-ai`, `dal`, `redis`, `worker (via Redis)` | LLMs directamente, DBMS directamente |
-| `router-ai` | LLMs externos, modelos locales | `dal`, `backend`, DBMS |
+| `router-ai` | LLMs externos, modelos locales, `redis` | `dal`, `backend`, DBMS |
 | `dal` | DBMS del cliente | LLMs, `backend`, `router-ai` |
 | `worker` | `router-ai`, `dal`, `conector-out`, `redis` | LLMs directamente, DBMS directamente |
 | `conector-in` | `backend` | LLMs, DBMS, conectores externos |

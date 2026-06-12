@@ -42,11 +42,13 @@ class ProviderStatus(BaseModel):
     name: str
     status: str
     detail: str | None = None
+    circuit: str | None = None  # closed | open | half_open
 
 
 class HealthResponse(BaseModel):
     status: str
     providers: dict[str, str]
+    rate_limit_store: str = "memory"
 
 
 class ErrorResponse(BaseModel):
@@ -54,3 +56,5 @@ class ErrorResponse(BaseModel):
     message: str
     trace_id: str | None = None
     provider: str | None = None
+    # Solo en errores temporales (429, 503); coincide con el header Retry-After
+    retry_after_seconds: int | None = None

@@ -1,6 +1,7 @@
 import logging
 from typing import TYPE_CHECKING
 from app.core.circuit_breaker import CircuitBreaker
+from app.core.errors import ProviderNotFound, ProviderUnavailable
 
 if TYPE_CHECKING:
     from app.adapters.base import BaseAdapter
@@ -19,13 +20,29 @@ class ProviderRegistry:
         self._breakers[key] = CircuitBreaker(provider=key)
         logger.info("Proveedor registrado: %s", name)
 
-    def get(self, name: str) -> "BaseAdapter | None":
+    def get(self, name: str) -> "BaseAdapter":
+        """Resuelve el adapter aplicando el circuit breaker.
+
+        Raises:
+            ProviderNotFound: el proveedor no está registrado (permanente).
+            ProviderUnavailable: breaker abierto (temporal, lleva retry_after).
+        """
         key = name.lower()
+        adapter = self._adapters.get(key)
+        if adapter is None:
+            raise ProviderNotFound(name)
         breaker = self._breakers.get(key)
         if breaker and not breaker.is_available():
-            logger.warning("Circuit breaker abierto para '%s'", key)
-            return None
-        return self._adapters.get(key)
+            retry_after = breaker.seconds_until_retry()
+            logger.warning(
+                "Circuit breaker abierto para '%s' (retry en %ds)", key, retry_after
+            )
+            raise ProviderUnavailable(key, retry_after)
+        return adapter
+
+    def get_unchecked(self, name: str) -> "BaseAdapter | None":
+        """Acceso sin circuit breaker, para health/observabilidad."""
+        return self._adapters.get(name.lower())
 
     def record_success(self, name: str) -> None:
         breaker = self._breakers.get(name.lower())

@@ -1,7 +1,9 @@
 # Arquitectura Vellum — Análisis Técnico Senior
 
 **Sistema Corporativo de Gestión de Prompts**  
-*Versión del análisis: 1.0 — Mayo 2026*
+*Versión del análisis: 1.1 — Junio 2026*
+
+> **Changelog v1.1 (2026-06-12):** Redis pasa de infraestructura planificada a servicio desplegado. Su primer consumidor real es el **router-ai**, con un rol nuevo no contemplado en v1.0: contadores de rate limiting RPM/TPM compartidos entre réplicas (change `router-ai-redis-rate-limit`, resuelve el 🔴 de la auditoría del 31-may). La dependencia router-ai → redis está autorizada en CLAUDE.md §11, acotada a rate limiting y con semántica fail-open. Los roles de cache de prompts (backend) y cola Celery (worker) siguen siendo futuros.
 
 ---
 
@@ -15,7 +17,11 @@ El sistema resuelve el problema de fragmentación que ocurre cuando una organiza
 
 ---
 
-## 2. Diagrama General de Arquitectura (ASCII Art)
+## 2. Diagrama General de Arquitectura
+
+Versión gráfica: [Arquitectura-Vellum-v3.png](Arquitectura-Vellum-v3.png) (fuente editable: `Arquitectura-Vellum-v3.svg`; la v2 se conserva como histórico previo a Redis).
+
+### ASCII Art
 
 ```
                           ┌─────────────────────────────────────────────────────────────────────┐
@@ -60,26 +66,31 @@ El sistema resuelve el problema de fragmentación que ocurre cuando una organiza
                           │  ┌──────────────────┐  ┌───────────────────┐   │
                           │  │    ROUTER-AI      │  │    ROUTER-DB      │   │
                           │  │  (Abstracción LLM)│  │  (Abstracción DB) │   │
-                          │  └────────┬─────────┘  └────────┬──────────┘   │
-                          │           │                      │               │
-                          └───────────┼──────────────────────┼───────────────┘
-                                      │                      │
-                    ┌─────────────────▼──────────┐  ┌───────▼──────────────────────┐
-                    │          LLM LAYER          │  │         DBMS LAYER            │
-                    │                             │  │                               │
-                    │  OpenAI   Anthropic  Google │  │  Oracle   MariaDB   Postgres  │
-                    │  Ollama   DeepSeek  LMStudio│  │  MySQL    MongoDB   SQL-Server│
-                    └─────────────────────────────┘  └───────────────────────────────┘
+                          │  └───┬────────┬─────┘  └────────┬──────────┘   │
+                          │      ┆        │                  │               │
+                          └──────┆────────┼──────────────────┼───────────────┘
+                                 ┆        │                  │
+             contadores RPM/TPM  ┆  ┌─────▼───────────────┐  ┌▼──────────────────────────────┐
+             compartidos entre   ┆  │     LLM LAYER        │  │         DBMS LAYER            │
+             réplicas (fail-open)┆  │                      │  │                               │
+                                 ┆  │ OpenAI Anthropic     │  │  Oracle   MariaDB   Postgres  │
+                                 ┆  │ Google Ollama        │  │  MySQL    MongoDB   SQL-Server│
+                                 ┆  │ DeepSeek LMStudio    │  │                               │
+                                 ┆  └──────────────────────┘  └───────────────────────────────┘
+                                 ┆
+   ──────────────────────────────┆──────────────────────────────────────────────────────────
+   INFRAESTRUCTURA TRANSVERSAL   ┆
+   ──────────────────────────────┆──────────────────────────────────────────────────────────
+                                 ▼
+   ┌──────────────────────────┐   ┌──────────────────┐   ┌──────────────────┐   ┌──────────────┐
+   │  Redis (desplegado)      │   │  Object Storage   │   │  Logs / ELK      │   │  Async       │
+   │  · Rate limit router-ai  │   │  S3 / MinIO       │   │  Structured JSON │   │  Workers     │
+   │  · Cache prompts (futuro)│   │  Audios/Videos    │   │  Audit Trail     │   │  Celery/RQ   │
+   │  · Cola Celery  (futuro) │   │                   │   │                  │   │  (futuro)    │
+   └──────────────────────────┘   └──────────────────┘   └──────────────────┘   └──────────────┘
 
-   ─────────────────────────────────────────────────────────────────────────────────────────
-   INFRAESTRUCTURA TRANSVERSAL
-   ─────────────────────────────────────────────────────────────────────────────────────────
-
-   ┌──────────────────┐   ┌──────────────────┐   ┌──────────────────┐   ┌──────────────┐
-   │  Redis           │   │  Object Storage   │   │  Logs / ELK      │   │  Async       │
-   │  Cache + Cola    │   │  S3 / MinIO       │   │  Structured JSON │   │  Workers     │
-   │  de tareas       │   │  Audios/Videos    │   │  Audit Trail     │   │  Celery/RQ   │
-   └──────────────────┘   └──────────────────┘   └──────────────────┘   └──────────────┘
+   La flecha punteada ROUTER-AI ⇢ Redis es deliberadamente no crítica: con Redis caído, el
+   router-ai degrada a contadores en memoria (fail-open) y lo reporta en /v1/health.
 ```
 
 ---
@@ -144,6 +155,8 @@ AI Provider Interface
 
 Evita el vendor lock-in total. Permite cambiar o combinar proveedores sin modificar el backend. También habilita estrategias de routing inteligente: selección por coste, por latencia, o por capacidad del modelo según el tipo de prompt.
 
+**Rate limiting distribuido (v1.1).** El router-ai aplica límites RPM/TPM por proveedor para proteger la cuota de la API key (que es global a la organización, no por instancia). Los contadores viven en un store intercambiable: `InMemoryRateLimitStore` (una sola instancia, dev) o `RedisRateLimitStore` (contadores compartidos entre réplicas, ventana deslizante por buckets de 1s). Selección por entorno (`RATE_LIMIT_STORE`), y degradación **fail-open**: si Redis cae, el servicio sigue operando con contadores locales y lo reporta en `/v1/health` — la caída de Redis nunca bloquea la ruta crítica de ejecución. Esta es la segunda capa de rate limiting del sistema, complementaria a la perimetral del gateway (por usuario/IP): el gateway protege la infraestructura propia; el router-ai protege la cuota ante los proveedores LLM.
+
 ### 3.6 DAL — Capa de Abstracción DBMS
 
 Microservicio FastAPI que abstrae el acceso a múltiples motores de base de datos. Soporta:
@@ -174,13 +187,15 @@ Principio de aislamiento de fallos: si un conector falla, la ejecución principa
 
 ### 3.8 Infraestructura de Soporte
 
-| Componente | Tecnología | Rol |
-|---|---|---|
-| Cache / Cola | Redis | Prompts frecuentes + task queue para workers |
-| Object Storage | S3 / MinIO | Archivos binarios (audios, vídeos de reuniones) |
-| Base de datos principal | PostgreSQL | Fuente de verdad del sistema |
-| Workers asíncronos | Celery + Redis | ASR, ejecuciones pesadas, conectores |
-| Logs | JSON estructurado + ELK (futuro) | Auditoría y observabilidad |
+| Componente | Tecnología | Rol | Estado |
+|---|---|---|---|
+| Cache / Cola / Contadores | Redis | Rate limiting distribuido del router-ai (**implementado**) · prompts frecuentes (futuro) · task queue para workers (futuro) | ✅ Desplegado (compose raíz, red interna, sin puerto al host) |
+| Object Storage | S3 / MinIO | Archivos binarios (audios, vídeos de reuniones) | Planificado |
+| Base de datos principal | PostgreSQL | Fuente de verdad del sistema | ✅ Desplegado |
+| Workers asíncronos | Celery + Redis | ASR, ejecuciones pesadas, conectores | Planificado |
+| Logs | JSON estructurado + ELK (futuro) | Auditoría y observabilidad | Parcial (JSON estructurado) |
+
+El acceso del router-ai a Redis está autorizado en CLAUDE.md §11 **exclusivamente para rate limiting**; el cache de prompts seguirá siendo responsabilidad del backend cuando exista. Un único Redis sirve los tres roles, separables por base de datos lógica (`/0`, `/1`, `/2`) si la operación lo requiere.
 
 ---
 
@@ -323,10 +338,10 @@ docker-compose
     ├── router-ai-container   (FastAPI microservice)
     ├── dal-container   (FastAPI microservice)
     ├── db-container          (PostgreSQL 15)
-    └── redis-container       (Redis 7)
+    └── redis-container       (Redis 7)  ← desplegado: rate limiting distribuido del router-ai
 ```
 
-Red interna Docker: los servicios se comunican por nombre de servicio. La base de datos nunca expone puertos al exterior.
+Red interna Docker: los servicios se comunican por nombre de servicio. Ni la base de datos ni Redis exponen puertos al exterior; el router-ai alcanza Redis por nombre (`redis://redis:6379/0`) solo cuando `RATE_LIMIT_STORE=redis`.
 
 ### Evolución planificada
 

@@ -57,6 +57,15 @@ class CircuitBreaker:
                 self.provider, self._failure_count,
             )
 
+    def seconds_until_retry(self) -> int:
+        """Segundos hasta el próximo intento half-open. Solo significativo en
+        OPEN; si el timeout ya venció, is_available() habrá transicionado a
+        half-open antes de llegar aquí, así que nunca se reporta 0."""
+        if self._state is not CircuitState.OPEN or self._opened_at is None:
+            return 0
+        elapsed = time.monotonic() - self._opened_at
+        return max(1, int(self.recovery_timeout - elapsed))
+
     @property
     def state(self) -> str:
         return self._state.value

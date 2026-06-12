@@ -87,6 +87,8 @@ if settings.ENV == "dev":
 ```
 
 **El `InMemoryRateLimitStore` no es compatible con escalado horizontal.**
+> ✅ **RESUELTO (2026-06-12)** — change `router-ai-redis-rate-limit`: nuevo `RedisRateLimitStore` con contadores compartidos entre réplicas (ventana deslizante de 60s por buckets de 1 segundo, `INCRBY`+`EXPIRE` atómicos, sin Lua). Selección por entorno (`RATE_LIMIT_STORE=memory|redis`, default memoria; rollback = configuración). De paso se corrigió la interfaz: async, `increment` con `amount` (el `record_tokens` original hacía un incremento *por token*), y sin timestamps crudos no comparables entre procesos. Degradación fail-open con Redis caído (arranque y runtime), visible en log y en `/v1/health` sin llamadas bloqueantes. Servicio `redis:7-alpine` en la red interna del compose raíz; acceso de router-ai a Redis aprobado por el arquitecto en CLAUDE.md §11 (solo rate limiting). Verificado: 45/45 tests (fakeredis, incluida simulación de dos réplicas compartiendo límite).
+
 Si despliegas dos instancias del router-ai (lo que harás en producción para HA), cada instancia tiene su propio contador en memoria. Con dos instancias y un límite de 100 RPM por proveedor, en realidad permites 200 RPM. Los límites de OpenAI/Anthropic se aplican a tu API key, no a tu instancia — puedes llegar a los límites del proveedor sin que ninguna instancia individual lo detecte. Esto necesita `RedisRateLimitStore` antes de escalar. El framework ya está preparado, hay que implementarlo y activarlo.
 
 ### 🟡 Mejoras importantes
@@ -111,7 +113,7 @@ Si despliegas dos instancias del router-ai (lo que harás en producción para HA
 | DAL — JSONB no portable | ✅ Resuelto (2026-06-10) | No — tipos portables en `types.py` |
 | DAL — Máquina de estados en executions | ✅ Resuelto (2026-06-10) | No — CAS atómico + 409 `INVALID_STATE_TRANSITION` |
 | Router-AI — Docs sin auth en producción | 🔴 Crítico | Sí |
-| Router-AI — Rate limiter en memoria | 🔴 Crítico | Sí (si escala) |
+| Router-AI — Rate limiter en memoria | ✅ Resuelto (2026-06-12) | No — `RedisRateLimitStore` compartido entre réplicas |
 | Router-AI — ASR ausente | 🟡 Importante | No (feature pendiente) |
 | DAL — Hard delete en prompts | ✅ Resuelto (2026-06-11) | No — soft delete + 409 con ejecuciones (también transcripts) |
 | DAL — Filtros de auditoría en executions | 🟡 Importante | No |
@@ -125,3 +127,5 @@ Los tres críticos del DAL y los dos del router-ai son los que yo resolvería an
 *Actualización 2026-06-10 (2): resuelto el tercer crítico del DAL (cambio `dal-execution-state-machine`). Transiciones permitidas: `queued→running`, `running→completed`, `running→failed`, `queued→cancelled` (nuevo estado terminal); todo lo demás — incluida misma→misma — responde 409 `INVALID_STATE_TRANSITION`, aplicado con compare-and-set atómico en el `WHERE` del `UPDATE`. De paso queda resuelto en el DAL el 🟡 «campo `cost` sin poblar»: `PATCH /status` acepta `cost` (y `output_data`) solo en transiciones terminales. Quedan pendientes los dos críticos del router-ai: docs sin auth y rate limiter en memoria.*
 
 *Actualización 2026-06-11: resuelto el 🟡 «Hard delete en prompts» (cambio `dal-prompt-soft-delete`): soft delete de prompts y transcripts condicionado a no tener ejecuciones, sin restore por API, con `include_deleted` para auditoría, y máquina de estados de prompts (`draft→approved↔deprecated`).*
+
+*Actualización 2026-06-12: resuelto el 🔴 «rate limiter en memoria» del router-ai (cambio `router-ai-redis-rate-limit`): `RedisRateLimitStore` compartido entre réplicas con selección por entorno y degradación fail-open. Único crítico pendiente: docs sin auth en producción.*

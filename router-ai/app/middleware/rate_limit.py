@@ -5,6 +5,7 @@ from starlette.responses import Response
 from app.core.rate_limiter import RateLimiter
 
 _limiter: RateLimiter | None = None
+_store_status: str = "memory"
 
 
 def get_limiter() -> RateLimiter | None:
@@ -14,6 +15,17 @@ def get_limiter() -> RateLimiter | None:
 def set_limiter(limiter: RateLimiter) -> None:
     global _limiter
     _limiter = limiter
+
+
+def get_store_status() -> str:
+    """Tipo de store decidido en el arranque ('memory', 'redis' o
+    'memory (degraded)'); lo reporta /health sin tocar Redis."""
+    return _store_status
+
+
+def set_store_status(status: str) -> None:
+    global _store_status
+    _store_status = status
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
@@ -32,7 +44,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 pass
 
         if provider:
-            result = limiter.check_request(provider)
+            result = await limiter.check_request(provider)
             if not result.allowed:
                 body = json.dumps({
                     "code": "RATE_LIMIT_EXCEEDED",
@@ -50,7 +62,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
 
         if provider and result.allowed:
-            limiter.record_request(provider)
+            await limiter.record_request(provider)
             remaining_rpm = result.remaining_rpm
             remaining_tpm = result.remaining_tpm
             if remaining_rpm is not None:

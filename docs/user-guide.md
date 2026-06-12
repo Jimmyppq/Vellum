@@ -444,7 +444,8 @@ fi
     "anthropic": "ok",
     "openai": "ok",
     "ollama": "ok"
-  }
+  },
+  "rate_limit_store": "redis"
 }
 ```
 
@@ -457,9 +458,12 @@ fi
     "anthropic": "ok",
     "openai": "error: Connection timeout",
     "ollama": "ok"
-  }
+  },
+  "rate_limit_store": "memory (degraded)"
 }
 ```
+
+> `rate_limit_store` indica el store de contadores de rate limiting decidido en el arranque: `memory` (default, contadores locales a la instancia), `redis` (compartido entre réplicas) o `memory (degraded)` (se pidió Redis pero era inaccesible al arrancar; los límites no se comparten entre réplicas hasta reiniciar con Redis disponible). El health no consulta Redis en cada petición.
 
 ---
 
@@ -474,11 +478,13 @@ curl -s http://localhost:8000/v1/providers \
 
 ```json
 [
-  {"name": "anthropic", "status": "ok", "detail": null},
-  {"name": "openai",    "status": "ok", "detail": null},
-  {"name": "ollama",    "status": "error", "detail": "Ollama no disponible"}
+  {"name": "anthropic", "status": "ok", "detail": null, "circuit": "closed"},
+  {"name": "openai",    "status": "ok", "detail": null, "circuit": "open"},
+  {"name": "ollama",    "status": "error", "detail": "Ollama no disponible", "circuit": "closed"}
 ]
 ```
+
+El campo `circuit` refleja el estado del circuit breaker del proveedor: `closed` (operación normal), `open` (en cuarentena — las solicitudes reciben 503 con `Retry-After`) o `half_open` (probando recuperación). Un proveedor puede estar `status: ok` con `circuit: open` — el proceso del proveedor responde, pero el breaker aún no completó su ciclo de recuperación.
 
 ---
 
@@ -492,7 +498,20 @@ curl -s http://localhost:8000/v1/providers \
 | 429 | `RATE_LIMIT_EXCEEDED` | Se superó el límite de RPM o TPM del proveedor |
 | 501 | `CAPABILITY_NOT_SUPPORTED` | El proveedor no soporta la operación (ej. Anthropic + embed) |
 | 502 | `PROVIDER_ERROR` | El proveedor LLM retornó un error |
+| 503 | `PROVIDER_UNAVAILABLE` | Proveedor en cuarentena temporal (circuit breaker abierto); incluye `Retry-After` |
 | 500 | `INTERNAL_ERROR` | Error interno no controlado |
+
+### Taxonomía de reintentos
+
+El contrato permite decidir la política de reintentos sin interpretar mensajes:
+
+| Respuesta | Significado | Qué hacer |
+|-----------|-------------|-----------|
+| 429 / 503 | Temporal; traen header `Retry-After` y `retry_after_seconds` en el cuerpo | Reintentar tras `Retry-After` segundos |
+| 422 | Permanente (proveedor inexistente o input inválido) | No reintentar; corregir la petición |
+| 502 | Fallo puntual del proveedor | Reintento a criterio del cliente, con backoff propio |
+
+El estado del circuit breaker de cada proveedor es visible en `GET /v1/providers` (campo `circuit`: `closed` / `open` / `half_open`).
 
 **Ejemplo de respuesta de error:**
 
@@ -623,3 +642,5 @@ Cuando se supera un límite, la respuesta incluye `retry_after_seconds` indicand
 RETRY=$(curl -si ... | grep -i "retry-after" | awk '{print $2}')
 sleep $RETRY
 ```
+
+Con varias réplicas del router-ai, los límites se aplican de forma **global** si el servicio está configurado con `RATE_LIMIT_STORE=redis` (los contadores se comparten vía Redis). Con el store en memoria, cada réplica cuenta por separado — apto solo para una instancia o entornos de desarrollo. El campo `rate_limit_store` de `/v1/health` indica el modo activo.

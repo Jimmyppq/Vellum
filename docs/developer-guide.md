@@ -23,6 +23,7 @@ router-ai/
 │   ├── main.py                    # Entrypoint FastAPI, lifespan, middlewares
 │   ├── api/v1/
 │   │   ├── router.py              # Agrupación de rutas bajo prefijo /v1
+│   │   ├── deps.py                # resolve_adapter(): traduce errores del registry a HTTP
 │   │   ├── chat.py                # POST /v1/message
 │   │   ├── stream.py              # POST /v1/stream
 │   │   ├── embed.py               # POST /v1/embed
@@ -37,10 +38,12 @@ router-ai/
 │   │   └── lmstudio.py
 │   ├── core/
 │   │   ├── config.py              # Settings (pydantic-settings)
-│   │   ├── registry.py            # ProviderRegistry singleton
+│   │   ├── registry.py            # ProviderRegistry singleton (lanza errores tipados)
+│   │   ├── errors.py              # ProviderNotFound, ProviderUnavailable
+│   │   ├── circuit_breaker.py     # CircuitBreaker por proveedor
 │   │   ├── auth.py                # verify_api_key()
 │   │   ├── logging.py             # setup_logging(), JsonFormatter
-│   │   ├── rate_limit_store.py    # RateLimitStore (ABC) + InMemoryRateLimitStore
+│   │   ├── rate_limit_store.py    # RateLimitStore (ABC) + InMemory + Redis
 │   │   └── rate_limiter.py        # RateLimiter (carga YAML, ventana deslizante)
 │   ├── middleware/
 │   │   ├── auth.py                # APIKeyMiddleware
@@ -57,6 +60,8 @@ router-ai/
 │   ├── test_logging.py
 │   ├── test_message.py
 │   ├── test_rate_limiting.py
+│   ├── test_redis_rate_limit_store.py
+│   ├── test_breaker_contract.py
 │   ├── test_registry.py
 │   └── test_stream.py
 ├── config/
@@ -87,7 +92,9 @@ Añadir un nuevo proveedor sólo requiere crear una clase nueva que herede de `B
 
 ### Circuit Breaker
 
-`ProviderRegistry` incluye un `CircuitBreaker` por proveedor (en `app/core/circuit_breaker.py`). Cuando un adaptador lanza una excepción, el endpoint llama a `registry.record_failure(provider)`. Tras 5 fallos consecutivos (configurable), el circuito se abre y `registry.get(provider)` devuelve `None` — lo que produce `PROVIDER_NOT_FOUND` hasta que el circuito se recupere.
+`ProviderRegistry` incluye un `CircuitBreaker` por proveedor (en `app/core/circuit_breaker.py`). Cuando un adaptador lanza una excepción, el endpoint llama a `registry.record_failure(provider)`. Tras 5 fallos consecutivos el circuito se abre y `registry.get(provider)` lanza `ProviderUnavailable` (con `retry_after_seconds` calculado por `CircuitBreaker.seconds_until_retry()`), que el helper común `app/api/v1/deps.py:resolve_adapter()` traduce a **503 `PROVIDER_UNAVAILABLE` + header `Retry-After`**. Un proveedor no registrado lanza `ProviderNotFound` → 422 `PROVIDER_NOT_FOUND`. Las excepciones viven en `app/core/errors.py`; `registry.get_unchecked()` salta el breaker (lo usan `/v1/health` y `/v1/providers`, que también expone el estado del circuito).
+
+Nota: el estado del breaker es **por réplica** (memoria del proceso); con varias instancias, el `Retry-After` describe la réplica que respondió, no el clúster. Inocuo para clientes que reintentan (el balanceador decide).
 
 Estados del circuito:
 
@@ -125,11 +132,11 @@ El parámetro `provider` viaja en el cuerpo JSON de cada petición. Esto permite
 
 ```python
 # app/api/v1/chat.py
-adapter = registry.get(request.provider)
-if adapter is None:
-    raise HTTPException(422, ErrorResponse(code="PROVIDER_NOT_FOUND", ...))
+adapter = resolve_adapter(request.provider, trace_id)
 return await adapter.message(request)
 ```
+
+`resolve_adapter()` (en `app/api/v1/deps.py`) es el único punto de traducción de errores de resolución, compartido por los tres endpoints: `ProviderNotFound` → 422 `PROVIDER_NOT_FOUND` (permanente) y `ProviderUnavailable` → 503 `PROVIDER_UNAVAILABLE` con `Retry-After` (breaker abierto, temporal).
 
 ### Streaming con Server-Sent Events
 
@@ -181,15 +188,19 @@ Handler del endpoint
 
 ### Rate Limiting
 
-`RateLimiter` carga `config/rate_limits.yaml` al arranque y usa `InMemoryRateLimitStore` (ventana deslizante con `collections.deque`). La arquitectura permite migrar a Redis sin cambiar el middleware:
+`RateLimiter` carga `config/rate_limits.yaml` al arranque. El store de contadores se selecciona por entorno (`RATE_LIMIT_STORE`):
 
 ```
-RateLimitStore (ABC)
-├── InMemoryRateLimitStore   ← implementación actual
-└── RedisRateLimitStore      ← futura migración
+RateLimitStore (ABC, async)
+├── InMemoryRateLimitStore   ← default (dev/tests); contadores locales al proceso
+└── RedisRateLimitStore      ← producción con varias réplicas; contadores compartidos
 ```
 
-Para migrar: implementar `RedisRateLimitStore(RateLimitStore)` e inyectarlo en `RateLimiter(config_path, store=RedisRateLimitStore(...))` en el `lifespan`.
+Con N réplicas, solo el store Redis garantiza que el límite configurado sea el efectivo (con memoria cada réplica cuenta por su cuenta: N×límite). `RedisRateLimitStore` implementa la ventana deslizante de 60s con buckets de 1 segundo (`INCRBY` + `EXPIRE` en pipeline; `MGET` para el conteo) — atómico entre réplicas, sin Lua. La contabilización de tokens es un único `increment(key, window, amount=tokens)`.
+
+**Degradación (fail-open):** si `RATE_LIMIT_STORE=redis` y Redis es inaccesible en el arranque, el servicio arranca con el store en memoria, loggea un error y `/v1/health` reporta `rate_limit_store: "memory (degraded)"`. En runtime, un error de Redis permite la solicitud y se loggea — el rate limiter protege cuota de proveedor, no es una frontera de seguridad. El health no hace llamadas a Redis: reporta el store decidido en el arranque.
+
+El servicio `redis` vive en el `docker-compose.yml` raíz (red interna, sin puerto al host). El acceso de router-ai a Redis está autorizado en CLAUDE.md §11 exclusivamente para rate limiting — el cache de prompts sigue siendo del backend.
 
 ---
 
@@ -217,6 +228,8 @@ cp .env.example .env
 | `LOG_LEVEL` | Nivel de log: `DEBUG` / `INFO` / `WARNING` | No | `INFO` |
 | `LOG_DIR` | Directorio para logs persistentes | No | `/logs` |
 | `RATE_LIMITS_CONFIG` | Ruta al YAML de rate limits | No | `config/rate_limits.yaml` |
+| `RATE_LIMIT_STORE` | Store de contadores: `memory` / `redis` | No | `memory` |
+| `REDIS_URL` | URL de Redis (puede incluir credenciales; nunca commitearla) | Solo con `redis` | `redis://redis:6379/0` |
 | `MTLS_ENABLED` | Activa TLS mutuo en uvicorn | No | `false` |
 | `MTLS_CERT_PATH` | Ruta al certificado del servicio | No | `/certs/service.crt` |
 | `MTLS_KEY_PATH` | Ruta a la clave privada del servicio | No | `/certs/service.key` |
@@ -300,6 +313,7 @@ Ajusta los valores según los límites de tu plan en cada proveedor. El cambio e
 | `google-genai` | SDK de Google AI Studio (Gemini) |
 | `httpx` | Cliente HTTP async para DeepSeek, Ollama y LM Studio |
 | `pyyaml` | Lectura de `rate_limits.yaml` |
+| `redis` | Cliente async para `RedisRateLimitStore` (contadores compartidos entre réplicas) |
 
 ---
 
@@ -314,6 +328,8 @@ docker compose up -d
 ```
 
 Los volúmenes `./logs` y `./config` se montan automáticamente. Los logs se escriben en `./logs/router-ai.log`.
+
+Para rate limiting distribuido (varias réplicas), el servicio `redis` vive en el `docker-compose.yml` **raíz** del proyecto (no en el compose local del router-ai): levantar desde la raíz y arrancar el router-ai con `RATE_LIMIT_STORE=redis` y `REDIS_URL=redis://redis:6379/0`. El compose local del router-ai en solitario funciona con el store en memoria.
 
 ### Dockerfile (multi-stage)
 
@@ -334,7 +350,7 @@ ROUTER_AI_API_KEY=test-key python -m pytest tests/ -v
 ROUTER_AI_API_KEY=test-key python -m pytest tests/ --cov=app --cov-report=term-missing
 ```
 
-Los tests usan mocks de adaptadores (`MagicMock`) y deshabilitan el rate limiter por defecto (`set_limiter(None)`), garantizando aislamiento total sin llamadas a APIs externas.
+Los tests usan mocks de adaptadores (`MagicMock`) y deshabilitan el rate limiter por defecto (`set_limiter(None)`), garantizando aislamiento total sin llamadas a APIs externas. Los tests del store distribuido (`tests/test_redis_rate_limit_store.py`) usan `fakeredis` — no requieren un Redis real ni el servicio del compose; el escenario multi-réplica se simula con dos stores sobre el mismo `FakeServer`.
 
 ---
 

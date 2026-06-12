@@ -1,9 +1,9 @@
 import json
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from app.models.request import MessageRequest
 from app.models.response import ErrorResponse
-from app.core.registry import registry
+from app.api.v1.deps import resolve_adapter
 
 router = APIRouter()
 
@@ -16,16 +16,8 @@ SSE_HEADERS = {
 
 @router.post("/stream")
 async def stream(request: MessageRequest):
-    adapter = registry.get(request.provider)
-    if adapter is None:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=ErrorResponse(
-                code="PROVIDER_NOT_FOUND",
-                message=f"Proveedor '{request.provider}' no está registrado.",
-                provider=request.provider,
-            ).model_dump(),
-        )
+    # El breaker se comprueba antes de abrir el SSE: el 503 sale como JSON normal
+    adapter = resolve_adapter(request.provider)
 
     async def event_generator():
         try:

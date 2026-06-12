@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException, Request, status
 from app.models.request import MessageRequest
 from app.models.response import ApiResponse, Meta, MessageResponse, ErrorResponse
 from app.core.registry import registry
+from app.api.v1.deps import resolve_adapter
 
 router = APIRouter()
 
@@ -12,17 +13,7 @@ async def message(request: MessageRequest, http_request: Request):
     request_id = getattr(http_request.state, "request_id", str(uuid.uuid4()))
     trace_id = getattr(http_request.state, "trace_id", None)
 
-    adapter = registry.get(request.provider)
-    if adapter is None:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=ErrorResponse(
-                code="PROVIDER_NOT_FOUND",
-                message=f"Proveedor '{request.provider}' no está registrado.",
-                trace_id=trace_id,
-                provider=request.provider,
-            ).model_dump(),
-        )
+    adapter = resolve_adapter(request.provider, trace_id)
     try:
         result: MessageResponse = await adapter.message(request)
         registry.record_success(request.provider)

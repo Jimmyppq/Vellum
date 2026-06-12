@@ -26,6 +26,8 @@ class Settings(BaseSettings):
 
     # Rate limiting
     rate_limits_config: str = "config/rate_limits.yaml"
+    rate_limit_store: str = "memory"  # memory | redis
+    redis_url: str = "redis://redis:6379/0"
 
     # mTLS (false en dev local, true en staging/producción)
     mtls_enabled: bool = False

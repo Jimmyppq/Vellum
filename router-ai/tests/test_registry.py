@@ -10,9 +10,14 @@ def test_register_and_get():
     assert reg.get("ANTHROPIC") is adapter
 
 
-def test_get_unknown_returns_none():
+def test_get_unknown_raises_provider_not_found():
+    import pytest
+    from app.core.errors import ProviderNotFound
+
     reg = ProviderRegistry()
-    assert reg.get("proveedor-desconocido") is None
+    with pytest.raises(ProviderNotFound):
+        reg.get("proveedor-desconocido")
+    assert reg.get_unchecked("proveedor-desconocido") is None
 
 
 def test_list_providers():

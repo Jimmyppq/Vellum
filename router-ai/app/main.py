@@ -8,13 +8,44 @@ from app.core.config import settings
 from app.core.logging import setup_logging
 from app.core.registry import registry
 from app.core.rate_limiter import RateLimiter
+from app.core.rate_limit_store import (
+    InMemoryRateLimitStore,
+    RateLimitStore,
+    RedisRateLimitStore,
+)
 from app.middleware.auth import APIKeyMiddleware
 from app.middleware.logging import AuditLogMiddleware
-from app.middleware.rate_limit import RateLimitMiddleware, set_limiter
+from app.middleware.rate_limit import RateLimitMiddleware, set_limiter, set_store_status
 from app.api.v1.router import router as v1_router
 from app.models.response import ErrorResponse
 
 logger = logging.getLogger(__name__)
+
+
+async def _build_rate_limit_store() -> tuple[RateLimitStore, str]:
+    """Selecciona el store según RATE_LIMIT_STORE. Con redis inaccesible
+    arranca degradado a memoria (fail-open) — la URL no se loggea porque
+    puede contener credenciales."""
+    if settings.rate_limit_store.lower() != "redis":
+        return InMemoryRateLimitStore(), "memory"
+
+    import redis.asyncio as aioredis
+
+    client = aioredis.from_url(settings.redis_url)
+    try:
+        await client.ping()
+        logger.info("Rate limiting con RedisRateLimitStore (compartido entre réplicas)")
+        return RedisRateLimitStore(client), "redis"
+    except Exception:
+        logger.error(
+            "RATE_LIMIT_STORE=redis pero Redis es inaccesible; "
+            "degradado a InMemoryRateLimitStore (los límites no se comparten entre réplicas)"
+        )
+        try:
+            await client.aclose()
+        except Exception:
+            pass
+        return InMemoryRateLimitStore(), "memory (degraded)"
 
 
 @asynccontextmanager
@@ -22,7 +53,9 @@ async def lifespan(app: FastAPI):
     setup_logging(settings.log_level, settings.log_dir)
     logger.info("Iniciando router-ai")
 
-    limiter = RateLimiter(settings.rate_limits_config)
+    store, store_status = await _build_rate_limit_store()
+    set_store_status(store_status)
+    limiter = RateLimiter(settings.rate_limits_config, store=store)
     set_limiter(limiter)
 
     await registry.startup()

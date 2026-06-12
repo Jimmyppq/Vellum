@@ -1,6 +1,5 @@
 import logging
 import os
-import time
 from dataclasses import dataclass
 from typing import Optional
 
@@ -51,20 +50,19 @@ class RateLimiter:
             )
         logger.info("Rate limits cargados para: %s", list(self._limits.keys()))
 
-    def check_request(self, provider: str, estimated_tokens: int = 0) -> CheckResult:
+    async def check_request(self, provider: str, estimated_tokens: int = 0) -> CheckResult:
         limits = self._limits.get(provider.lower())
         if limits is None:
             return CheckResult(allowed=True)
 
-        rpm_key = f"{provider}:rpm"
-        tpm_key = f"{provider}:tpm"
+        rpm_key = f"{provider.lower()}:rpm"
+        tpm_key = f"{provider.lower()}:tpm"
 
         # Verificar RPM
         if limits.requests_per_minute is not None:
-            current_rpm = self._store.get_count(rpm_key)
+            current_rpm = await self._store.get_count(rpm_key)
             if current_rpm >= limits.requests_per_minute:
-                oldest = self._store.oldest_timestamp(rpm_key)
-                retry_after = max(1, int(WINDOW - (time.monotonic() - oldest))) if oldest else WINDOW
+                retry_after = await self._store.seconds_until_oldest_expires(rpm_key, WINDOW)
                 return CheckResult(
                     allowed=False,
                     limit_type="requests_per_minute",
@@ -74,10 +72,9 @@ class RateLimiter:
 
         # Verificar TPM
         if limits.tokens_per_minute is not None and estimated_tokens > 0:
-            current_tpm = self._store.get_count(tpm_key)
+            current_tpm = await self._store.get_count(tpm_key)
             if current_tpm + estimated_tokens > limits.tokens_per_minute:
-                oldest = self._store.oldest_timestamp(tpm_key)
-                retry_after = max(1, int(WINDOW - (time.monotonic() - oldest))) if oldest else WINDOW
+                retry_after = await self._store.seconds_until_oldest_expires(tpm_key, WINDOW)
                 return CheckResult(
                     allowed=False,
                     limit_type="tokens_per_minute",
@@ -87,18 +84,17 @@ class RateLimiter:
 
         remaining_rpm = None
         if limits.requests_per_minute is not None:
-            remaining_rpm = limits.requests_per_minute - self._store.get_count(rpm_key)
+            remaining_rpm = limits.requests_per_minute - await self._store.get_count(rpm_key)
 
         remaining_tpm = None
         if limits.tokens_per_minute is not None:
-            remaining_tpm = limits.tokens_per_minute - self._store.get_count(tpm_key)
+            remaining_tpm = limits.tokens_per_minute - await self._store.get_count(tpm_key)
 
         return CheckResult(allowed=True, remaining_rpm=remaining_rpm, remaining_tpm=remaining_tpm)
 
-    def record_request(self, provider: str) -> None:
-        self._store.increment(f"{provider}:rpm", WINDOW)
+    async def record_request(self, provider: str) -> None:
+        await self._store.increment(f"{provider.lower()}:rpm", WINDOW)
 
-    def record_tokens(self, provider: str, tokens: int) -> None:
+    async def record_tokens(self, provider: str, tokens: int) -> None:
         if tokens > 0:
-            for _ in range(tokens):
-                self._store.increment(f"{provider}:tpm", WINDOW)
+            await self._store.increment(f"{provider.lower()}:tpm", WINDOW, amount=tokens)
