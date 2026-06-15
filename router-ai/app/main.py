@@ -78,7 +78,7 @@ app = FastAPI(
 # por lo que el último añadido se ejecuta primero.
 app.add_middleware(AuditLogMiddleware)
 app.add_middleware(RateLimitMiddleware)
-app.add_middleware(APIKeyMiddleware)
+app.add_middleware(APIKeyMiddleware, env=settings.env)
 
 app.include_router(v1_router)
 

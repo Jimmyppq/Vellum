@@ -1,5 +1,3 @@
-version: "3.9"
-
 networks:
   vellum-internal:
     driver: bridge

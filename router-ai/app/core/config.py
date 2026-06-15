@@ -3,10 +3,15 @@ from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 VALID_LOG_LEVELS = {"DEBUG", "INFO", "WARNING"}
+VALID_ENVS = {"dev", "staging", "prod"}
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    # Entorno de ejecución: dev | staging | prod.
+    # Default prod: olvidar la variable nunca debe relajar la seguridad.
+    env: str = "prod"
 
     # Autenticación interna
     router_ai_api_key: SecretStr
@@ -34,6 +39,17 @@ class Settings(BaseSettings):
     mtls_cert_path: str = "/certs/service.crt"
     mtls_key_path: str = "/certs/service.key"
     mtls_ca_path: str = "/certs/ca.crt"
+
+    @field_validator("env", mode="before")
+    @classmethod
+    def validate_env(cls, v: str) -> str:
+        lower = str(v).lower()
+        if lower not in VALID_ENVS:
+            logging.warning(
+                "ENV='%s' no válido; usando 'prod' por defecto.", v
+            )
+            return "prod"
+        return lower
 
     @field_validator("log_level", mode="before")
     @classmethod

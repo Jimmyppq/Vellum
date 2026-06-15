@@ -5,6 +5,10 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      # Compose de desarrollo local: docs sin auth. En staging/prod no usar
+      # este compose o exportar ENV=prod (default del servicio si falta).
+      ENV: ${ENV:-dev}
     volumes:
       - ../logs:/logs
       - ./config:/app/config

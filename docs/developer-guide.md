@@ -365,6 +365,11 @@ Los tests usan mocks de adaptadores (`MagicMock`) y deshabilitan el rate limiter
 No es necesario modificar ningún endpoint, middleware ni modelo.
 
 
-## En prod
+## Protección de la documentación por entorno
 
-En el router-ai/app/core/auth.py se debe modificar la variable EXCLUDED_PATHS = {"/v1/health", "/docs", "/openapi.json", "/redoc"} para que no sea acesible desde producción, permitiendo a atacantes acceder a la documentación sin autenticación.
+Los paths exentos de API key dependen del setting `ENV` (`dev | staging | prod`, default `prod`), calculados por `excluded_paths(env)` en `app/middleware/auth.py`:
+
+- `ENV=dev`: `/v1/health`, `/docs`, `/openapi.json` y `/redoc` accesibles sin auth (el compose local fija `ENV=dev`).
+- Cualquier otro entorno (incluida la ausencia de la variable o un valor no reconocido, que cae a `prod` con warning): solo `/v1/health` queda exento; la documentación sigue disponible presentando `X-API-Key`.
+
+Tests por entorno en `tests/test_docs_auth.py`. Resuelve el hallazgo 🔴 «docs sin autenticación en producción» de la auditoría 31-may (change `router-ai-docs-auth`).

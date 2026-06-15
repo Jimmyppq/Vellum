@@ -336,6 +336,7 @@ Códigos HTTP obligatorios:
 
 ## 10. Lo que un Agente de IA DEBE hacer antes de generar código
 
+0. **Leer `docs/ESTADO.md`** para conocer qué está construido, en qué fase está el proyecto y qué sigue. Este archivo (CLAUDE.md) da las reglas; ESTADO.md da la situación.
 1. **Identificar a qué microservicio pertenece** el código que va a generar. Si no está claro, preguntar.
 2. **Verificar que no cruza fronteras**: un módulo del backend no importa código del dal ni del router-ai directamente.
 3. **Verificar que toda query pasa por el DAL** si el código involucra acceso a datos.
@@ -360,5 +361,26 @@ Códigos HTTP obligatorios:
 
 ---
 
+## 12. Estado de la Implementación — docs/ESTADO.md
+
+`docs/ESTADO.md` es el registro vivo del estado del proyecto: matriz de componentes (construido / en curso / no iniciado), fase actual, trabajo en curso y próximos pasos.
+
+```
+Reglas OBLIGATORIAS para todo agente:
+  ✅ Leer docs/ESTADO.md al inicio de cualquier tarea de implementación o análisis
+  ✅ Al COMPLETAR una implementación (típicamente al archivar un change de OpenSpec),
+     actualizar docs/ESTADO.md en el mismo turno de trabajo:
+       - fila del componente afectado en la matriz (§1)
+       - trabajo en curso (§3), próximos pasos (§5) y cola de propuestas (§6)
+       - añadir la fila al historial de cambios (§7)
+       - fecha de "Última actualización"
+  ❌ No duplicar en ESTADO.md el detalle técnico (eso va en docs/ y openspec/specs/)
+  ❌ No marcar nada como construido sin tests en verde
+```
+
+Justificación: sin un punto de entrada actualizado, cada agente debe reconstruir el contexto desde auditorías, git log y openspec — costoso y propenso a conclusiones desfasadas.
+
+---
+
 *Este archivo es la fuente de verdad arquitectónica para cualquier agente de IA trabajando en este proyecto.*  
-*Última actualización: Mayo 2026*
+*Última actualización: Junio 2026 — v1.1: router-ai autorizado a llamar a `redis` (§11); añadido §12 (docs/ESTADO.md)*

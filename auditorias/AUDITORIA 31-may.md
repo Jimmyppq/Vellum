@@ -78,6 +78,8 @@ El developer guide lo documenta textualmente:
 
 > *"se debe modificar la variable `EXCLUDED_PATHS`... para que no sea accesible desde producción"*
 
+> ✅ **RESUELTO (2026-06-12)** — change `router-ai-docs-auth`: nuevo setting `ENV` (`dev | staging | prod`, default `prod` — seguro por defecto, valores no reconocidos caen a `prod` con warning) y `excluded_paths(env)` en el middleware: la documentación solo queda exenta de API key en `dev`; `/v1/health` permanece exento en todos los entornos. El compose local fija `ENV=dev`. Verificado: 73/73 tests (incluye matriz por entorno en `tests/test_docs_auth.py`). Con esto quedan **cerrados todos los hallazgos críticos** de esta auditoría.
+
 `/docs`, `/openapi.json` y `/redoc` son accesibles sin autenticación ahora mismo. Esto no puede llegar a staging en un producto bancario. La solución inmediata es que `EXCLUDED_PATHS` solo incluya `/v1/health` cuando `ENV != "dev"`:
 
 ```python
